@@ -179,8 +179,10 @@ sub nestfess($$) # ($prefix, $orig)
 # a string or another piece of code that would generate the string.
 #
 # $msg - either an error message string or a code snippet that
-#    will generate the error message. This error message will be
-#    prepended to the one caught, and re-confessed.
+#    will generate the error message, or a reference to one of them.
+#    This error message will be prepended to the one caught, and re-confessed.
+#    If a reference is used, it allows to change the message
+#    from inside the $code.
 # $code - the code snipped that will be called in eval, and the
 # 	confessions from it will be prepended by the prepended by
 # 	a high-level explanation.
@@ -195,7 +197,12 @@ sub wrapfess($$) # ($msg, $code)
 		my $stack = Carp::longmess();
 		#print "--- wrapfess stack ---\n$stack\n------\n";
 
-		if (ref $msg eq "CODE") {
+		my $reftype = ref $msg;
+		if ($reftype eq "SCALAR" || $reftype eq "REF") {
+			$msg = $$msg;
+			$reftype = ref $msg;
+		}
+		if ($reftype eq "CODE") {
 			$msg = &$msg;
 		}
 		nestfess($msg, $nested);
