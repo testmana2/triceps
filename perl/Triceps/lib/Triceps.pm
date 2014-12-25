@@ -42,13 +42,13 @@ our @ISA = qw(Exporter);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = ( 'all' => [ qw(
-	
+	trifess nestfess wrapfess
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw(
-	
+
 );
 
 our $VERSION = 'v2.0.0';
@@ -111,6 +111,89 @@ sub clearArgs
 			eval { undef %$v; };
 		}
 		undef $v;
+	}
+}
+
+# The Triceps version of Carp::confess that allows the piecemeal
+# wrapping of the messages.
+#
+# It can also be used directly instead of Carp::confess().
+# It stops the stack trace on the first "eval {...}", just like the
+# XS code of Triceps does.
+sub trifess # ($msg)
+{
+	my $stack = Carp::longmess();
+
+	# The first line of the stack is trifess() itself, drop it
+	$stack =~ s/^.*\n//;
+	# If called from the nested throw, ignore the nestfess() as well
+	$stack =~ s/^\tTriceps\:\:nestfess.*\n//;
+
+	# drop anything beyond the first eval(); if that eval will decide
+	# to trifess again, it will add its own stack
+	$stack =~ s/(\teval \{\.\.\.\}[^\n]*\n).*$/$1/s;
+
+	my $text = join('', @_);
+	chomp($text);
+	$text .= "\n" . $stack;
+	die $text;
+}
+
+# "re-throw" the confession, adding a prefix message to it,
+# and indenting the original message (except for the stack, the lines
+# of the stack trace start with \t in the original message)
+#
+# $prefix - the high-level error message, to prepend to the original one
+# $orig - the original error message from $@ that got caught by eval;
+#    the error message part of it will be indented by two spaces
+#    ("  "), the stack trace (that is indented by a \t) will not
+#    be additionally indented but will be cut at the first line
+#    containing "eval {...}" and then extended with the current
+#    stack trace. This treatment allows to remove the duplication
+#    of the stack trace.
+#
+#    SBXXX this removal of "eval" will damage the nested stack traces returned by XS?
+sub nestfess($$) # ($prefix, $orig)
+{
+	my ($prefix, $orig) = @_;
+
+	chomp($prefix);
+	# Indent the original message (but not stack trace).
+	$orig =~ s/^([^\t])/  $1/mg;
+	# In the original stack, drop starting from the eval {...},
+	# since this is the eval that has been caught and is being
+	# re-thrown here. This eval makes no sense on the stack,
+	# and the rest of the stack from here out will be re-created
+	# by trifess().
+	# Drop the last eval from the stack since it's rethrowing
+	# the error and has no other meaning.
+	$orig =~ s/\n\teval \{\.\.\.}.*$/\n/s;
+
+	trifess "$prefix\n$orig";
+}
+
+# Wrap the code in a handler that will add a more descriptive error
+# message in case if the code throws. The error message may be either
+# a string or another piece of code that would generate the string.
+#
+# $msg - either an error message string or a code snippet that
+#    will generate the error message. This error message will be
+#    prepended to the one caught, and re-confessed.
+# $code - the code snipped that will be called in eval, and the
+# 	confessions from it will be prepended by the prepended by
+# 	a high-level explanation.
+sub wrapfess($$) # ($msg, $code)
+{
+	my ($msg, $code) = @_;
+	my $result = eval  { &$code };
+	if ($@) {
+		my $nested = $@;
+		if (ref $msg eq "CODE") {
+			$msg = &$msg;
+		}
+		nestfess($msg, $nested);
+	} else {
+		return $result;
 	}
 }
 
@@ -206,7 +289,7 @@ Sergey A. Babkin, E<lt>babkin@users.sf.netE<gt> or E<lt>sab123@hotmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2011-2012 by Sergey A.Babkin
+Copyright (C) 2011-2014 by Sergey A.Babkin
 
 This library distributed under the Triceps edition of Lesser GPL license version 3.0.
 

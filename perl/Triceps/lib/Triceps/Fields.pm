@@ -204,8 +204,17 @@ sub makeTranslation # (optName => optValue, ...)
 			);
 		}';
 
-	my $result_rt = Triceps::RowType->new(@rowdef);
+	# SBXXX various versions of error reports, TODO: remove them after all is sorted out
+	# my $result_rt = Triceps::RowType->new(@rowdef);
+	# my $result_rt = eval { Triceps::RowType->new(@rowdef); };
+	# if ($@) { Triceps::nestfess("$myname: Invalid result row type specification:", $@); }
 		# XXX extended error "$myname: Invalid result row type specification: $! ";
+	# my $result_rt = Triceps::wrapfess "$myname: Invalid result row type specification:",
+		# sub { Triceps::RowType->new(@rowdef); };
+	my $result_rt = Triceps::wrapfess sub {
+			"$myname: Invalid result row type specification:\n  {" . join(' ', @rowdef) . "}"
+		},
+		sub { Triceps::RowType->new(@rowdef); };
 
 	${$opts->{saveCodeTo}} = $gencode if (defined($opts->{saveCodeTo}));
 
