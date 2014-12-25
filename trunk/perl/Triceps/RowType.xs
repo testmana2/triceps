@@ -61,11 +61,28 @@ Triceps::RowType::new(...)
 			Onceref<RowType> rt = new CompactRowType(fld);
 			Erref err = rt->getErrors();
 			if (err->hasError()) {
-				throw Exception::f(err, "Triceps::RowType::new: incorrect data");
+				throw Exception::f(err, "Triceps::RowType::new: incorrect specification:");
 			}
 
 			RETVAL = new WrapRowType(rt);
-		} while(0); } TRICEPS_CATCH_CROAK;
+		} while(0); } 
+		// the custom version of TRICEPS_CATCH_CROAK
+		catch (Exception e) {
+			Erref err = e.getErrors();
+			Erref spec = new Errors(true);
+
+			for (int i = 1; i < items; i += 2) {
+				const char *fname = (const char *)SvPV_nolen(ST(i));
+				const char *ftype = i+1 < items ? (const char *)SvPV_nolen(ST(i+1)) : "";
+
+				spec.f("%s => %s", fname, ftype);
+			}
+
+			err->append("Triceps::RowType::new: The specification was: {", spec);
+			err->appendMsg(true, "}");
+			setCroakMsg(err->print());
+			croakIfSet();
+		}
 	OUTPUT:
 		RETVAL
 

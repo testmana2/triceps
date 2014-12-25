@@ -42,7 +42,7 @@ our @ISA = qw(Exporter);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = ( 'all' => [ qw(
-	trifess nestfess wrapfess
+	nestfess wrapfess
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -114,31 +114,6 @@ sub clearArgs
 	}
 }
 
-# The Triceps version of Carp::confess that allows the piecemeal
-# wrapping of the messages.
-#
-# It can also be used directly instead of Carp::confess().
-# It stops the stack trace on the first "eval {...}", just like the
-# XS code of Triceps does.
-sub trifess # ($msg)
-{
-	my $stack = Carp::longmess();
-
-	# The first line of the stack is trifess() itself, drop it
-	$stack =~ s/^.*\n//;
-	# If called from the nested throw, ignore the nestfess() as well
-	$stack =~ s/^\tTriceps\:\:nestfess.*\n//;
-
-	# drop anything beyond the first eval(); if that eval will decide
-	# to trifess again, it will add its own stack
-	$stack =~ s/(\teval \{\.\.\.\}[^\n]*\n).*$/$1/s;
-
-	my $text = join('', @_);
-	chomp($text);
-	$text .= "\n" . $stack;
-	die $text;
-}
-
 # "re-throw" the confession, adding a prefix message to it,
 # and indenting the original message (except for the stack, the lines
 # of the stack trace start with \t in the original message)
@@ -146,30 +121,57 @@ sub trifess # ($msg)
 # $prefix - the high-level error message, to prepend to the original one
 # $orig - the original error message from $@ that got caught by eval;
 #    the error message part of it will be indented by two spaces
-#    ("  "), the stack trace (that is indented by a \t) will not
-#    be additionally indented but will be cut at the first line
+#    ("  "), the stack trace (the lines indented by a \t) will not
+#    be additionally indented. But the final stack trace (lines indented
+#    by \t at the end of the message, not followed by the message
+#    lines) will be cut at the first line
 #    containing "eval {...}" and then extended with the current
 #    stack trace. This treatment allows to remove the duplication
-#    of the stack trace.
-#
-#    SBXXX this removal of "eval" will damage the nested stack traces returned by XS?
+#    of the stack trace while preserving the interleaved stack
+#    trace created by the interleaving of the XS and Perl calls.
 sub nestfess($$) # ($prefix, $orig)
 {
 	my ($prefix, $orig) = @_;
 
-	chomp($prefix);
-	# Indent the original message (but not stack trace).
+	chomp $prefix;
+
+	#print "--- orig ---\n$orig\n------\n";
+	# Separate the stack trace lines at the end for special processing 
+	# (the stack trace snippets may also be
+	# embedded between the error messages and these should stay unchanged).
+	chomp $orig;
+	$orig =~ s/((\n\t.*)*)$//;
+	my $trace = $1;
+
+	# Indent the original message (but not stack trace lines that start
+	# with \t and might be left embedded throughout the message).
 	$orig =~ s/^([^\t])/  $1/mg;
-	# In the original stack, drop starting from the eval {...},
+
+	#print "--- orig ---\n$orig\n------\n";
+	#print "--- trace ---\n$trace\n------\n";
+
+	# In the most recent stack trace, drop starting from the eval {...},
 	# since this is the eval that has been caught and is being
 	# re-thrown here. This eval makes no sense on the stack,
-	# and the rest of the stack from here out will be re-created
-	# by trifess().
-	# Drop the last eval from the stack since it's rethrowing
-	# the error and has no other meaning.
-	$orig =~ s/\n\teval \{\.\.\.}.*$/\n/s;
+	# and the rest of the stack from here out will be re-created.
+	# This is needed because the errors from the XS calls contain
+	# the Perl stack only to the nearest eval, so the rest of the
+	# stack needs to be appended. And the XS calls do this so that
+	# they can unroll multiple layers of Perl-XS intermingling
+	# without duplication of the full stack traces.
+	$trace =~ s/\n\teval \{\.\.\.}.*$//s;
+	$trace .= "\n";
+	#print "--- trace after ---\n$trace\n------\n";
 
-	trifess "$prefix\n$orig";
+	my $stack = Carp::longmess();
+	#print "--- nestfess stack ---\n$stack\n------\n";
+	# The first line of the stack is the call of nestfess() itself, drop it
+	$stack =~ s/^.*\n//;
+
+	# $orig has no trailing \n
+	# $trace starts with an \n and ends with an \n
+	# $stack normally ends with an \n
+	die "$prefix\n$orig$trace$stack";
 }
 
 # Wrap the code in a handler that will add a more descriptive error
@@ -188,6 +190,11 @@ sub wrapfess($$) # ($msg, $code)
 	my $result = eval  { &$code };
 	if ($@) {
 		my $nested = $@;
+
+		#print "--- wrapfess nested ---\n$nested\n------\n";
+		my $stack = Carp::longmess();
+		#print "--- wrapfess stack ---\n$stack\n------\n";
+
 		if (ref $msg eq "CODE") {
 			$msg = &$msg;
 		}

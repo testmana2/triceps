@@ -212,7 +212,7 @@ sub makeTranslation # (optName => optValue, ...)
 	# my $result_rt = Triceps::wrapfess "$myname: Invalid result row type specification:",
 		# sub { Triceps::RowType->new(@rowdef); };
 	my $result_rt = Triceps::wrapfess sub {
-			"$myname: Invalid result row type specification:\n  {" . join(' ', @rowdef) . "}"
+			"$myname: Invalid result row type specification:"
 		},
 		sub { Triceps::RowType->new(@rowdef); };
 
