@@ -72,7 +72,7 @@ $rt2 = eval { Triceps::RowType->new(
 	e => "string[]",
 ); };
 ok(!defined $rt2);
-ok($@, qr/^Triceps::RowType::new: field 'e' string array type is not supported at/);
+ok($@, qr/^Triceps::RowType::new: field 'e' string array type is not supported\nTriceps::RowType::new: The specification was: {\n  a => void\n  b => int32\n  c => int64\n  d => float64\n  e => string\[\]\n} at/);
 
 $rt2 = eval { Triceps::RowType->new(
 	a => "void",
@@ -82,7 +82,7 @@ $rt2 = eval { Triceps::RowType->new(
 	e => "string",
 ); };
 ok(!defined $rt2);
-ok($@, qr/^Triceps::RowType::new: incorrect data\n  field 'a' type must not be void at/);
+ok($@, qr/^Triceps::RowType::new: incorrect specification:\n  field 'a' type must not be void\nTriceps::RowType::new: The specification was: \{\n  a => void\n  b => int32\n  c => int64\n  d => float64\n  e => string\n\} at/);
 
 $rt2 = eval { Triceps::RowType->new(
 	a => "",
@@ -92,12 +92,12 @@ $rt2 = eval { Triceps::RowType->new(
 	e => "string",
 ); };
 ok(!defined $rt2);
-ok($@, qr/^Triceps::RowType::new: field 'a' has an unknown type '' at/);
+ok($@, qr/^Triceps::RowType::new: field 'a' has an unknown type ''\nTriceps::RowType::new: The specification was: \{\n  a => \n  b => int32\n  c => int64\n  d => float64\n  e => string\n\} at/);
 
 $rt2 = eval { Triceps::RowType->new(
 ); };
 ok(!defined $rt2);
-ok($@, qr/^Usage: Triceps::RowType::new\(CLASS, fieldName, fieldType, ...\), names and types must go in pairs at/);
+ok($@, qr/^Usage: Triceps::RowType::new\(CLASS, fieldName, fieldType, ...\), names and types must go in pairs\nTriceps::RowType::new: The specification was: \{\n\} at/);
 
 undef $@;
 $rt2 = eval { Triceps::RowType->new(
@@ -108,7 +108,7 @@ $rt2 = eval { Triceps::RowType->new(
 	"string",
 ); };
 ok(!defined $rt2);
-ok($@, qr/^Usage: Triceps::RowType::new\(CLASS, fieldName, fieldType, ...\), names and types must go in pairs at/);
+ok($@, qr/^Usage: Triceps::RowType::new\(CLASS, fieldName, fieldType, ...\), names and types must go in pairs\nTriceps::RowType::new: The specification was: \{\n  a => \n  b => int32\n  c => int64\n  d => float64\n  string => \n\} at/);
 
 # schema inheritance
 $rt2 = Triceps::RowType->new(

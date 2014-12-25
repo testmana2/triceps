@@ -189,7 +189,16 @@ my $tr_pairs2a = [ 'one', 'field1', 'two', 'field2' ];
 		);
 	};
 	#print "$@\n";
-	ok($@, qr/^Triceps::Fields::makeTranslation: Invalid result row type specification:\n  \{f2 int32\[\] f1 string f1 string f2 float64\[\]\}\n  Triceps::RowType::new: incorrect data\n    duplicate field name 'f1' for fields 3 and 2\n    duplicate field name 'f2' for fields 4 and 1 at/);
+	ok($@, qr/^Triceps::Fields::makeTranslation: Invalid result row type specification:
+  Triceps::RowType::new: incorrect specification:
+    duplicate field name 'f1' for fields 3 and 2
+    duplicate field name 'f2' for fields 4 and 1
+  Triceps::RowType::new: The specification was: \{
+    f2 => int32\[\]
+    f1 => string
+    f1 => string
+    f2 => float64\[\]
+  \} at/);
 }
 
 #########################
