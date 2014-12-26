@@ -1435,7 +1435,7 @@ while(&readLine) {
 	$uTrades->drainFrame(); # just in case, for completeness
 }
 
-#print $compText, "\n";
+# print $compText, "\n";
 # Here the indenting is all spaces, not tabs!
 ok($compText,
 '  use strict;

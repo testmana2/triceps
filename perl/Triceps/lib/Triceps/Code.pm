@@ -56,3 +56,14 @@ sub compile # ( $code_ref_or_string, $optional_code_description )
 	}
 	return $code
 }
+
+# Left-align the source code by removing the excess whitespace on the
+# left (which tends to get produced in the auto-generated code)
+# and then adding the required indentation.
+# The excess whitespace gets detected by the first two lines.
+# The tabs get replaced with two spaces ("  ") each.
+#
+# $code - the source code to align
+sub alignsrc # ($code, $indent)
+{
+}

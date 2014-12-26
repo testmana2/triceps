@@ -200,7 +200,7 @@ sub make # (optName => optValue, ...)
 				# XXX should also syntax-check all the code snippets by compliling them in a limited context first
 				confess "Triceps::SimpleAggregator: internal error in definition of aggregation function '$func', vars element must be a 'HASH' reference"
 					unless (ref($vars) eq 'HASH');
-				foreach my $v (keys %$vars) {
+				foreach my $v (sort keys %$vars) { # sort for predictability in testing
 					confess "Triceps::SimpleAggregator: internal error in definition of aggregation function '$func', vars initialization value for '$v' must be a string"
 						unless (ref($vars->{$v}) eq '');
 					# the variable names are given a unique prefix;

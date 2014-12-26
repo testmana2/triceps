@@ -47,13 +47,31 @@ ok(&$res(), 1);
 
 $res = eval { Triceps::Code::compile("1 ) 2"); };
 ok(!defined $res);
-ok("$@", qr/Code snippet: failed to compile the source code\nCompilation error: syntax error at .*\nThe source code was:\nsub {\n1 \) 2\n}\n at .*\/Code.pm line \d*\n\tTriceps::Code::compile\('1 \) 2'\) called at .*\/Code.t line \d*\n\teval {...} called at .*\/Code.t line \d*\n/);
-print $@;
+#print $@;
+ok($@, qr/^Code snippet: failed to compile the source code
+Compilation error: syntax error at .*
+The source code was:
+sub {
+1 \) 2
+}
+ at .*\/Code.pm line \d*\.?
+\tTriceps::Code::compile\('1 \) 2'\) called at .*\/Code.t line \d*\.?
+\teval {...} called at .*\/Code.t line \d*\.?
+/);
 
 $res = eval { Triceps::Code::compile("1 ) 2", "test code"); };
 ok(!defined $res);
-ok("$@", qr/^test code: failed to compile the source code\nCompilation error: syntax error at .*\nThe source code was:\nsub \{\n1 \) 2\n\}\n at .*\/Code.pm line \d*\n\tTriceps::Code::compile\('1 \) 2', 'test code'\) called at .*\/Code.t line \d*\n\teval {...} called at .*\/Code.t line \d*\n/);
-print $@;
+#print $@;
+ok($@, qr/^test code: failed to compile the source code
+Compilation error: syntax error at .*
+The source code was:
+sub \{
+1 \) 2
+\}
+ at .*\/Code.pm line \d*\.?
+\tTriceps::Code::compile\('1 \) 2', 'test code'\) called at .*\/Code.t line \d*\.?
+\teval {...} called at .*\/Code.t line \d*\.?
+/);
 
 # a completely wrong value
 $res = eval { Triceps::Code::compile([1, 2]); };
