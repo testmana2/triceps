@@ -15,7 +15,7 @@
 use ExtUtils::testlib;
 
 use Test;
-BEGIN { plan tests => 16 };
+BEGIN { plan tests => 20 };
 use Triceps;
 ok(1); # If we made it this far, we're ok.
 
@@ -83,3 +83,72 @@ $res = eval { Triceps::Code::compile([1, 2], "test code"); };
 ok(!defined $res);
 ok("$@", qr/^test code: code must be a source code string or a reference to Perl function at/);
 
+#########################
+# Code formatting
+
+# the lines 4-($-2) get ignored when counting the indentation,
+# the lines with no indentation get ignored too;
+# lines in the middle with indentation less that the detected one
+# have their indentation left as-is
+$res = Triceps::Code::alignsrc("one
+\  two
+\   three
+\ four
+\  five
+six");
+#print "$res\n";
+ok($res, "one
+two
+ three
+ four
+five
+six");
+
+# the old indentation gets substituted; new indentation added to all lines
+$res = Triceps::Code::alignsrc("  one
+\   two
+\    three
+\   four
+five", "++");
+#print "$res\n";
+ok($res, "++one
+++ two
+++  three
+++ four
+++five");
+
+# the tabs are preferred to spaces when detecting
+# indentation (and then the spaces stay unchanged)
+$res = Triceps::Code::alignsrc("one
+\  two
+\   three
+\t\t\tfour
+\t\tfive
+\tsix", "++", "--");
+#print "$res\n";
+ok($res, "++one
+++  two
+++   three
+++----four
+++--five
+++six");
+
+# the default replacement for a tab is two spaces;
+# and the removal of the last \n and empty lines at the front
+$res = Triceps::Code::alignsrc("  " . "
+
+
+one
+\  two
+\   three
+\t\t\tfour
+\t\tfive
+\tsix
+", "++", "");
+#print "$res\n";
+ok($res, "++one
+++  two
+++   three
+++    four
+++  five
+++six");
