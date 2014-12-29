@@ -213,7 +213,7 @@ my $tr_pairs2a = [ 'one', 'field1', 'two', 'field2' ];
   syntax error at \(eval \d+\) line \d+, near "\}\)
 "
 function text:
-   2   sub \{ # \(\@rows\)
+     2 sub \{ # \(\@rows\)
 /);
 
 }
