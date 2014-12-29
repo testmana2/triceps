@@ -57,6 +57,9 @@ sub compile # ( $code_ref_or_string, $optional_code_description )
 	return $code
 }
 
+# number of empty lines at the front removed by alignsrc
+our $align_removed_lines;
+
 # Left-align the source code by removing the excess whitespace on the
 # left (which tends to get produced in the auto-generated code)
 # and then adding the required indentation.
@@ -65,6 +68,7 @@ sub compile # ( $code_ref_or_string, $optional_code_description )
 #
 # $code - the source code to align; it will also have \n at the end removed
 #     if it was there; and any empty lines at the front will be removed as well
+#     and their count will be placed into $Triceps::Code::align_removed_lines.
 # $indent - indentation to prepend to all the lines after removing the
 #     auto-detected indentation
 # $tab - each tab (\t) will be replaced to this string, or it's taken as
@@ -74,8 +78,17 @@ sub alignsrc # ($code, $indent, [ $tab ])
 	my ($code, $indent, $tab) = @_;
 	my @ci;
 
+	$indent = "" unless defined($indent); # shut up the warnings in the tests
+	$tab = "" unless defined($tab); # shut up the warnings in the tests
+
 	chomp $code;
-	$code =~ s/^(\s*\n)+//;
+	if ($code =~ s/^((\s*\n)+)//) {
+		my $removed = $1;
+		$removed =~ s/.*//g; # leave only \n
+		$align_removed_lines = length($removed);
+	} else {
+		$align_removed_lines = 0;
+	}
 	$tab = "  " if ($tab eq "");
 
 	# find the indentation on the first and last lines
@@ -124,3 +137,22 @@ sub alignsrc # ($code, $indent, [ $tab ])
 	$code =~ s/\t/$tab/g;
 	return $code
 }
+
+# Same as alignsrc but also prepends each line with the line numbers
+#
+# $code - the source code to align; it will also have \n at the end removed
+#     if it was there; and any empty lines at the front will be removed as well
+#     and their count will be placed into $Triceps::Code::align_removed_lines.
+# $indent - indentation to prepend to all the lines after removing the
+#     auto-detected indentation
+# $tab - each tab (\t) will be replaced to this string, or it's taken as
+#     two spaces "  " if empty
+sub numalign # ($code, $indent, [ $tab ])
+{
+	my $code = alignsrc(@_);
+	my $i = $align_removed_lines;
+	$code =~ s/^/sprintf("%4d ", ++$i)/gme;
+	return $code;
+}
+
+1;

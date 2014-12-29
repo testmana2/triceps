@@ -15,7 +15,7 @@
 use ExtUtils::testlib;
 
 use Test;
-BEGIN { plan tests => 20 };
+BEGIN { plan tests => 26 };
 use Triceps;
 ok(1); # If we made it this far, we're ok.
 
@@ -103,6 +103,7 @@ two
  four
 five
 six");
+ok($Triceps::Code::align_removed_lines, 0);
 
 # the old indentation gets substituted; new indentation added to all lines
 $res = Triceps::Code::alignsrc("  one
@@ -152,3 +153,40 @@ ok($res, "++one
 ++    four
 ++  five
 ++six");
+ok($Triceps::Code::align_removed_lines, 3);
+
+# with line numbers
+$res = Triceps::Code::numalign("one
+\  two
+\   three
+\t\t\tfour
+\t\tfive
+\tsix", "++", "--");
+#print "$res\n";
+ok($res, "   1 ++one
+   2 ++  two
+   3 ++   three
+   4 ++----four
+   5 ++--five
+   6 ++six");
+ok($Triceps::Code::align_removed_lines, 0);
+
+# with line numbers and removed lines
+$res = Triceps::Code::numalign("
+
+
+one
+\  two
+\   three
+\t\t\tfour
+\t\tfive
+\tsix", "++", "--");
+#print "$res\n";
+ok($res, "   4 ++one
+   5 ++  two
+   6 ++   three
+   7 ++----four
+   8 ++--five
+   9 ++six");
+ok($Triceps::Code::align_removed_lines, 3);
+

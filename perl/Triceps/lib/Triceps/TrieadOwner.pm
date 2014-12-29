@@ -138,3 +138,4 @@ sub trackGetFile # ($self, $name, $mode)
 	return ($tfd, $file);
 }
 
+1;
