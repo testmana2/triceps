@@ -63,7 +63,64 @@ sub compile # ( $code_ref_or_string, $optional_code_description )
 # The excess whitespace gets detected by the first two lines.
 # The tabs get replaced with two spaces ("  ") each.
 #
-# $code - the source code to align
-sub alignsrc # ($code, $indent)
+# $code - the source code to align; it will also have \n at the end removed
+#     if it was there; and any empty lines at the front will be removed as well
+# $indent - indentation to prepend to all the lines after removing the
+#     auto-detected indentation
+# $tab - each tab (\t) will be replaced to this string, or it's taken as
+#     two spaces "  " if empty
+sub alignsrc # ($code, $indent, [ $tab ])
 {
+	my ($code, $indent, $tab) = @_;
+	my @ci;
+
+	chomp $code;
+	$code =~ s/^(\s*\n)+//;
+	$tab = "  " if ($tab eq "");
+
+	# find the indentation on the first and last lines
+	$code =~ /^(\s*)/;
+	push @ci, $1;
+	$code =~ /^.*\n(\s*)/;
+	push @ci, $1;
+	$code =~ /^.*\n.*\n(\s*)/;
+	push @ci, $1;
+	$code =~ /\n(\s*).*$/;
+	push @ci, $1;
+	$code =~ /\n(\s*).*\n.*$/;
+	push @ci, $1;
+
+	if (0) {
+		print "first '$ci[0]'\n";
+		print "second '$ci[1]'\n";
+		print "third '$ci[2]'\n";
+		print "belast '$ci[4]'\n"; # the before-last line
+		print "last '$ci[3]'\n";
+	}
+
+	# find the smallest non-empty indentation (assume that the tabs and spaces
+	# are used consistently, and if in doubt, prefer tabs)
+	my $oldind = '';
+	foreach $i (@ci) {
+		next if ($i eq '');
+		if ($oldind eq '') {
+			$oldind = $i;
+			next;
+		}
+		if ($oldind =~ /^ / && $i =~ /^\t/) {
+			$oldind = $i;
+			next;
+		}
+		if (length($i) < length($oldind)) {
+			$oldind = $i;
+			next;
+		}
+	}
+
+	#print "oldind '$oldind'\n";
+
+	$code =~ s/^$oldind//gm;
+	$code =~ s/^/$indent/gm;
+	$code =~ s/\t/$tab/g;
+	return $code
 }
