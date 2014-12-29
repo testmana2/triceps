@@ -150,8 +150,11 @@ sub alignsrc # ($code, $indent, [ $tab ])
 sub numalign # ($code, $indent, [ $tab ])
 {
 	my $code = alignsrc(@_);
+	my $indent = $_[1];
+	$indent = "" unless defined($indent); # shut up the warnings in the tests
+	my $indentre = quotemeta($indent);
 	my $i = $align_removed_lines;
-	$code =~ s/^/sprintf("%4d ", ++$i)/gme;
+	$code =~ s/^$indentre/sprintf("%s%4d ", $indent, ++$i)/gme;
 	return $code;
 }
 

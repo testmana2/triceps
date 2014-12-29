@@ -163,12 +163,12 @@ $res = Triceps::Code::numalign("one
 \t\tfive
 \tsix", "++", "--");
 #print "$res\n";
-ok($res, "   1 ++one
-   2 ++  two
-   3 ++   three
-   4 ++----four
-   5 ++--five
-   6 ++six");
+ok($res, "++   1 one
+++   2   two
+++   3    three
+++   4 ----four
+++   5 --five
+++   6 six");
 ok($Triceps::Code::align_removed_lines, 0);
 
 # with line numbers and removed lines
@@ -182,11 +182,11 @@ one
 \t\tfive
 \tsix", "++", "--");
 #print "$res\n";
-ok($res, "   4 ++one
-   5 ++  two
-   6 ++   three
-   7 ++----four
-   8 ++--five
-   9 ++six");
+ok($res, "++   4 one
+++   5   two
+++   6    three
+++   7 ----four
+++   8 --five
+++   9 six");
 ok($Triceps::Code::align_removed_lines, 3);
 
