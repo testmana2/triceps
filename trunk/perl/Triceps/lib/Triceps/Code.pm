@@ -133,8 +133,8 @@ sub alignsrc # ($code, $indent, [ $tab ])
 	#print "oldind '$oldind'\n";
 
 	$code =~ s/^$oldind//gm;
-	$code =~ s/^/$indent/gm;
 	$code =~ s/\t/$tab/g;
+	$code =~ s/^/$indent/gm;
 	return $code
 }
 
