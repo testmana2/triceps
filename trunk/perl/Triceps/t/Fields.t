@@ -15,7 +15,7 @@
 use ExtUtils::testlib;
 
 use Test;
-BEGIN { plan tests => 45 };
+BEGIN { plan tests => 46 };
 use Triceps;
 ok(1); # If we made it this far, we're ok.
 
@@ -199,6 +199,23 @@ my $tr_pairs2a = [ 'one', 'field1', 'two', 'field2' ];
     f1 => string
     f2 => float64\[\]
   \} at/);
+
+	# error in the auto-generated code
+	eval {
+		my ($rt, $func) = Triceps::Fields::makeTranslation(
+			rowTypes => [ $tr_rt2 ],
+			filterPairs => [ $tr_pairs2a ],
+			_simulateCodeError => 1,
+		);
+	};
+	#print "$@\n";
+	ok($@, qr/^Triceps::Fields::makeTranslation: error in compilation of the generated function:
+  syntax error at \(eval \d+\) line \d+, near "\}\)
+"
+function text:
+   2   sub \{ # \(\@rows\)
+/);
+
 }
 
 #########################

@@ -164,6 +164,7 @@ sub makeTranslation # (optName => optValue, ...)
 			rowTypes => [ undef, sub { &Triceps::Opt::ck_mandatory(@_); &Triceps::Opt::ck_ref(@_, "ARRAY", "Triceps::RowType") } ],
 			filterPairs => [ undef, sub { &Triceps::Opt::ck_mandatory(@_); &Triceps::Opt::ck_ref(@_, "ARRAY", "ARRAY") } ],
 			saveCodeTo => [ undef, sub { &Triceps::Opt::ck_refscalar(@_) } ],
+			_simulateCodeError => [ undef ],
 		}, @_);
 
 	# reset the saved source code
@@ -210,9 +211,14 @@ sub makeTranslation # (optName => optValue, ...)
 
 	${$opts->{saveCodeTo}} = $gencode if (defined($opts->{saveCodeTo}));
 
+	if ($opts->{_simulateCodeError}) {
+		$gencode .= ")";
+	}
+
 	# compile the translation function
 	my $func = eval $gencode
-		or confess "$myname: error in compilation of the function:\n  $@\nfunction text:\n$gencode ";
+		or confess "$myname: error in compilation of the generated function:\n  $@function text:\n"
+		. Triceps::Code::numalign($gencode, "  ") . "\n";
 
 	return ($result_rt, $func);
 }

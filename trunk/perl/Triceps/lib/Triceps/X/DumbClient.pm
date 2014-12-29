@@ -56,3 +56,4 @@ sub run # ($labels)
 	waitpid($pid, 0);
 }
 
+1;
