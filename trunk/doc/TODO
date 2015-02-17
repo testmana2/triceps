@@ -25,7 +25,6 @@ Things that need to be done:
 * add a Sequence template, that calls its multiple output labels in order
 * a pseudo-table that keeps only the state of the additive aggregations, without actual data
   (the data just passes through and gets immediately aggregated)
-* convert everything to croak on errors (at least, the non-ignorable ones)
 * option in labels, tracers etc. to not rethrow the Perl errors but just print them
 * replace the exceptions with returning error bufs?
 * replace all direct Perl_croak() with a smart stack unroll
@@ -36,7 +35,6 @@ Things that need to be done:
 * should it throw from Unit::clearLabels(), and if called from a destructor, 
   catch it there?
 * for basic persistence, add dump of tables, quick disconnect of results on reload
-* register error messages from the outside scopes, to be printed on failure in the called functions
 * in Tray handle the undefs and NULLs better (see XXX)
 * rewrite makeLoop* with a Loop object
 * make the Perl tracer with row contents a standard Triceps object
@@ -133,6 +131,8 @@ Things that need to be done:
 * in harvester, if an abort is detected, limit the waiting time for the thread exit;
   propagate the error if timing out (see the Perl App reference, app timeout)
 * docbook: make it not access http://docbook.sourceforge.net/release/images/draft.png
+* nested rows/records
+* Perl values in fields of Triceps rows/records
 
 * doc: reference for all the X classes in Perl
 * doc: for all Perl examples, show in the text the file that contains them

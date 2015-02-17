@@ -3210,7 +3210,9 @@ sub make # (optName => optValue, ...)
 
 			$id++;
 		}
-		$rtRes = Triceps::RowType->new(@rtdefRes);
+		$rtRes = Triceps::wrapfess
+			"$myname: invalid result row type definition:",
+			sub { Triceps::RowType->new(@rtdefRes); };
 	}
 	${$opts->{saveRowTypeTo}} = $rtRes if (defined($opts->{saveRowTypeTo}));
 </pre>
@@ -3261,12 +3263,17 @@ sub make # (optName => optValue, ...)
 <pre>
 	# compile the computation function
 	my $compFun = eval $compText
-		or confess "$myname: error in compilation of the aggregation computation:\n  $@\nfunction text:\n$compText ";
+		or confess "$myname: error in compilation of the aggregation computation:\n  $@function text:\n"
+			. Triceps::Code::numalign($compText, "  ") . "\n";
 
 	# build and add the aggregator
-	my $agg = Triceps::AggregatorType->new($rtRes, $opts->{name}, undef, $compFun, @compArgs);
+	my $agg = Triceps::wrapfess
+		"$myname: internal error: failed to build an aggregator type:",
+		sub { Triceps::AggregatorType->new($rtRes, $opts->{name}, undef, $compFun, @compArgs); };
 
-	$idx->setAggregator($agg);
+	Triceps::wrapfess
+		"$myname: failed to set the aggregator in the index type:",
+		sub { $idx->setAggregator($agg); };
 
 	return $opts->{tabType};
 }
