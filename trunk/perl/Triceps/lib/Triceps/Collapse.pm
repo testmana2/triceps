@@ -78,7 +78,6 @@ sub new # ($class, $optName => $optValue, ...)
 		"$myname: Collapse table type creation error for dataset '" . $dataset->{name} . "':",
 		sub { $dataset->{tt}->initialize(); };
 
-
 	Triceps::wrapfess 
 		"$myname: Collapse internal error: insert table creation for dataset '" . $dataset->{name} . "':",
 		sub { $dataset->{tbInsert} = $self->{unit}->makeTable($dataset->{tt}, $self->{name} . "." . $dataset->{name} . ".tbInsert"); };
