@@ -96,18 +96,23 @@ sub new # ($class, $optName => $optValue, ...)
 		->addSubIndex("primary", 
 			Triceps::IndexType->newHashed(key => $dataset->{key})
 		);
-	$dataset->{tt}->initialize() ;
-		# XXX extended error "Collapse table type creation error for dataset '" . $dataset->{name} . "':\n$! ";
+
+	Triceps::wrapfess
+		"Collapse table type creation error for dataset '" . $dataset->{name} . "':",
+		sub { $dataset->{tt}->initialize(); };
 
 	$dataset->{tbInsert} = $self->{unit}->makeTable($dataset->{tt}, $self->{name} . "." . $dataset->{name} . ".tbInsert");
 	$dataset->{tbDelete} = $self->{unit}->makeTable($dataset->{tt}, $self->{name} . "." . $dataset->{name} . ".tbInsert");
 
 	# create the labels
-	$dataset->{lbIn} = $self->{unit}->makeLabel($dataset->{rowType}, $self->{name} . "." . $dataset->{name} . ".in", 
-		undef, \&_handleInput, $self, $dataset);
-			# XXX extended error "Collapse internal error: input label creation for dataset '" . $dataset->{name} . "':\n$! ";
-	$dataset->{lbOut} = $self->{unit}->makeDummyLabel($dataset->{rowType}, $self->{name} . "." . $dataset->{name} . ".out");
-		# XXX extended error "Collapse internal error: output label creation for dataset '" . $dataset->{name} . "':\n$! ";
+	Triceps::wrapfess
+		"Collapse internal error: input label creation for dataset '" . $dataset->{name} . "':",
+		sub { $dataset->{lbIn} = $self->{unit}->makeLabel($dataset->{rowType}, $self->{name} . "." . $dataset->{name} . ".in", 
+			undef, \&_handleInput, $self, $dataset); };
+
+	Triceps::wrapfess
+		"Collapse internal error: output label creation for dataset '" . $dataset->{name} . "':",
+		sub { $dataset->{lbOut} = $self->{unit}->makeDummyLabel($dataset->{rowType}, $self->{name} . "." . $dataset->{name} . ".out"); };
 			
 	# chain the input label, if any
 	if (defined $lbFrom) {
@@ -462,10 +467,8 @@ sub tryBadDataOptValue # (optName, optValue, ...)
 }
 
 &tryBadDataOptValue("key", [ "xxx" ]);
-# XXX This explanatory message doesn't propagate after the
-# TableType got converted to the new error reporting.
-# qr/^Collapse table type creation error for dataset 'idata':
 ok($@, 
-qr/^index error:
-  nested index 1 'primary':
-    can not find the key field 'xxx' at/);
+qr/^Collapse table type creation error for dataset 'idata':
+  index error:
+    nested index 1 'primary':
+      can not find the key field 'xxx' at/);

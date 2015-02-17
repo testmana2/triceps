@@ -271,8 +271,9 @@ sub make # (optName => optValue, ...)
 
 			$id++;
 		}
-		$rtRes = Triceps::RowType->new(@rtdefRes);
-			# XXX extended error "$myname: invalid result row type definition: $!";
+		$rtRes = Triceps::wrapfess
+			"$myname: invalid result row type definition:",
+			sub { Triceps::RowType->new(@rtdefRes); };
 	}
 	${$opts->{saveRowTypeTo}} = $rtRes if (defined($opts->{saveRowTypeTo}));
 
@@ -309,11 +310,13 @@ sub make # (optName => optValue, ...)
 		or confess "$myname: error in compilation of the aggregation computation:\n  $@\nfunction text:\n$compText ";
 
 	# build and add the aggregator
-	my $agg = Triceps::AggregatorType->new($rtRes, $opts->{name}, undef, $compFun, @compArgs);
-		# XXX extended error "$myname: internal error: failed to build an aggregator type: $! ";
+	my $agg = Triceps::wrapfess
+		"$myname: internal error: failed to build an aggregator type:",
+		sub { Triceps::AggregatorType->new($rtRes, $opts->{name}, undef, $compFun, @compArgs); };
 
-	$idx->setAggregator($agg);
-		# XXX extended error "$myname: failed to set the aggregator in the index type: $! ";
+	Triceps::wrapfess
+		"$myname: failed to set the aggregator in the index type:",
+		sub { $idx->setAggregator($agg); };
 
 	return $opts->{tabType};
 }
@@ -868,9 +871,7 @@ tryBadOptValue(
 			symbol => "string[]", "last", sub {$_[0]->get("symbol");},
 		],
 );
-# XXX no error wrapper yet
-#ok($@, qr/^MySimpleAggregator::make: invalid result row type definition: Triceps::RowType::new: field 'symbol' string array type is not supported/);
-ok($@, qr/^Triceps::RowType::new: field 'symbol' string array type is not supported/);
+ok($@, qr/^MySimpleAggregator::make: invalid result row type definition:\n  Triceps::RowType::new: field 'symbol' string array type is not supported/);
 
 tryBadOptValue(
 		result => [
