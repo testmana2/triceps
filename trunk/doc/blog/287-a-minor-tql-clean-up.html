@@ -1,0 +1,15 @@
+a minor TQL clean-up
+
+I've been working on the documentation chapter about TQL, and noticed that its single-threaded version has not been updated to use the query name as the label in the response. So I've fixed it. The previous output like
+
+query,{read table tSymbol}
+lb1read OP_INSERT symbol="AAA" name="Absolute Auto Analytics Inc" eps="0.5"
++EOD,OP_NOP,lb1read
+
+now becomes
+
+query,{read table tSymbol}
+query OP_INSERT symbol="AAA" name="Absolute Auto Analytics Inc" eps="0.5"
++EOD,OP_NOP,query
+
+I've also added the optional argument for name override in SimpleServer::makeServerOutLabel().

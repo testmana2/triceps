@@ -1,0 +1,399 @@
+Relational Operations on the Nested Data
+
+I wrote this little whitepaper that I don't know where to put, so I'll just put it here. It gives some interesting ideas for the future development of Triceps. The PDF version can also be found at http://web.newsguy.com/sab123/papers/rel_nested.pdf
+
+It might also help to read first my explanation of why the nested data is important and how it differs from the Object Relations Managers at http://babkin-cep.blogspot.com/2014/12/nested-record-and-orm.html.
+
+
+Relational Operations on the Nested Data
+Sergey A. Babkin
+
+Abstract
+This paper shows a way to integrate the RDBMS and the nested records to the mutual benefit. The nested records dovetail with the relational model to cover the weaknesses of the later, such as the representation of the multi-dimensional 1:M joins, and allow an optimization of other kinds of jons.
+
+Summary
+The use of the nested data structures seems to be growing in popularity for the distributed data processing: Google has Protobufs, Hadoop and Bing have their own formats, XML has been around for a long time, and so on. Among other things, they are used as records in the non-relational and kind-of-relational DBMS. While at Google, I've used the Dremel system that implements a read-only columnar database over the tables of nested records in the protobuf format, and while it was convenient in some ways, in the other ways the operations in it have felt unnecessarily difficult. To be honest, by now I can't even formulate why exactly it felt so: it's been a while since I've used Dremel, and by now I forgot the details, I have to guess from the logical considerations in the published description in [Dremel] (http://research.google.com/pubs/pub37217.html). The theory behind it is described very nicely in [Nested] (http://peqnp.blogspot.com/2013/01/nested-relational-algebra.html) and in the documents it refers to. It was surprising to find out that their model is based on a paper from 1988 [Report] (http://www.cs.indiana.edu/cgi-bin/techreports/TRNNN.cgi?trnum=TR259), and apparently nothing much had happened since then. Everything I've found on the subject seems to be based on [Report].
+
+In this paper I want to show that:
+1.       There is more to the nested data structures than described in [Report].
+2.       There is a straightforward way to map the nested data to the relational operations and take advantage of its locality.
+3.       A common record-based (as opposed to columnar, such as Dremel) RDBMS can be adapted to take advantage of the nested records with a small set of changes.
+
+To forestall a typical question, this is not a proposal for a way of doing ORM that translates from objects to flat tables, and is not in any way related to ORM. It is about the adoption of the nested records into the relational theory.
+
+Nested data is multi-dimensional
+The [Report] deals with the nesting but all the nesting discussed there is one-dimensional. The schema of an example from there can be written out in a pseudo-code similar to Google protobufs in Listing 1. Even though the nesting is two-deep, it goes in only one direction, growing in one dimension.
+
+struct client {
+
+  string name;
+
+  string address;
+
+  repeated struct company {
+
+    string name;
+
+    repeated struct share {
+
+      float price;
+
+      string date;
+
+      int quantity;
+
+    } shares;
+
+  } companies;
+
+};
+Listing 1. One-dimensional nested data structure.
+
+But the real-world nested records tend to have multiple repeated elements. For example, consider a structure describing a theatrical company. It might list the pieces produced by this company in the current season and the actors in the company, as shown in Listing 2. This structure has two separate repeating fields going in parallel at the same level, expanding in two dimensions.
+
+struct company {
+
+  string name;
+
+  repeated struct piece { // dimension 1
+
+    string name;
+
+    string start_date;
+
+    string end_date;
+
+  } pieces;
+
+  repeated struct actor { // dimension 2
+
+    string name;
+
+    string bio;
+
+  } actors;
+
+};
+Listing 2. Two-dimensional nested data structure.
+
+For another example, the [Dremel] paper describes a structure shown in Listing 3.
+
+struct  Document {
+
+  int64 DocId;
+
+  struct {
+
+    repeated int64 Backward; // dimension 1
+
+    repeated int64 Forward; // dimension 2
+
+  } Links;
+
+  repeated struct { // dimension 3
+
+    repeated struct Language {
+
+      string Code;
+
+      string Country;
+
+    }
+
+    string Url;
+
+  } Names;
+
+};
+Listing 3. Three-dimensional nested data structure from [Dremel] paper.
+
+This example has four repeated elements in three dimensions, one of the dimensions nesting two-deep.
+
+Or there might be further cross-references in the nested data, for example, the theatrical company description may have a list of actors for each piece, as show in Listing 4. Rather than repeating actor's biography in each piece, it can be found by name, descending down the other dimension. Note that the field piece. actor_name is also repeated, creating a nesting of two levels deep.
+
+struct company {
+
+  string name;
+
+  repeated struct piece { // dimension 1
+
+    string name;
+
+    string start_date;
+
+    string end_date;
+
+    repeated string actor_name; // cross-reference to dimension 2
+
+  } pieces;
+
+  repeated struct actor { // dimension 2
+
+    string name;
+
+    string bio;
+
+  } actors;
+
+};
+Listing 4. Two-dimensional nested data with nested cross-references.
+
+The [Report] doesn't provide a solution for the multi-dimensional data. There even are papers like [NoGood] (http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.89.2966&rep=rep1&type=pdf )that argue that the nested structures are not a good idea to start with, citing in particular the cross-references like shown above between the pieces and the actors. But with a little different approach, the nested structures are quite useful.
+
+
+Nested data is the result of a Join
+
+People argue everywhere, including Wikipedia, that the nested data saves the need for joins. And it looks obvious, yet I haven't seen this fact stated before in another form, looking from a different standpoint:
+
+A nested structure can be thought of as the result of a join.
+
+The abovementioned theatrical company data from Listing 4 can be represented in the pure relational way as multiple joined tables (shown here in an SQL-like pseudo-code), as shown in Listing 5.
+
+
+create table company (
+
+  company_id integer,
+
+  name varchar
+
+);
+
+
+
+create table pieces (
+
+  company_id integer,
+
+  piece_id integer,
+
+  piece_name varchar,
+
+  start_date varchar,
+
+  end_date varchar
+
+);
+
+
+
+create table piece_actors (
+
+  company_id integer,
+
+  piece_id integer,
+
+  p_actor_name varchar
+
+);
+
+
+
+create table actors (
+
+  company_id integer,
+
+  actor_name varchar,
+
+  actor_bio varchar
+
+);
+
+
+
+create view company_w as
+
+select * from
+
+  company
+
+  left outer join pieces // dimension 1
+
+    on company.company_id = pieces.company_id
+
+  left outer join piece_actors // nesting in dimension 1
+
+    on piece.company_id = piece_actors.company_id
+
+    and piece.piece_id = piece_actors.piece_id
+
+  left outer join actors // dimension 2
+
+    on company.company_id = actors.company_id
+
+;
+Listing 5. Construction of the nested records by joining the flat tables.
+
+This glances over the naming of the fields in the flat “select *” but if the field names used in the join conditions are named the same in each use, and the rest of the field names are named uniquely, the combination is straightforward and easy to understand.
+
+Having created the join result in Listing 5, the records can be packed into the nested form according to the rules in [Report].
+
+Since the join was done by two dimensions (one went towards actors, another towards pieces and piece_actors), the packing has to be done along two dimensions as well. [Report] discusses only the one-dimensional packing. However the same principle can be easily applied to pack multiple dimensions.
+
+The [Report] cannot tackle more than one dimension because in this situation it can’t decide on the grouping of the fields.
+
+But looking at the nested data as the join results, the dimensionality of the nested data directly translates to the dimensionality of a join, and the other way around, which is a known relational feature. Thus the join provides the guidance to how to do the grouping. And obviously the different subsets of fields have to be grouped separately, according to the join condition that brought them from their flat record. Figure 1 shows the diagram of the grouping.
+
+Fields of company
++-- Fields of pieces (dimension 1)
+|     +-- Fields of piece_actor
++-- Fields of actors (dimension 2)
+Figure 1. A nested record as constructed from the flat records by a join.
+
+Note that the purely relational results of the join would have been hugely redundant and next to impossible to process because both dimensions are 1:M joins, and even more so because the dimension by pieces goes two levels deep. But having been packed into a nested data structure, they are compact and easily manageable. The nested records provide a convenient and compact representation for the results of the joins of this kind.
+
+The particular branches of the nested structures can be chosen for traversing if the query makes reference only to these branches. For example, for the query shown in Listing 6, there is obviously no need to traverse down the dimension by pieces (shows in Figure 1 as “dimension 1”), only the dimension by actors (“dimension 2”) is needed.
+
+
+select company_name, actor_name, actor_bio
+
+from company_w;
+
+Listing 6. An example of a query from the joined view.
+
+In the terms of the nested data structures from Listing 4, the same query from Listing 6 will become as shown in Listing 7. Or the whole packed sub-record on actors can be selected by an even simpler query shown in Listing 8.
+
+select name, actors.name, actors.bio
+
+from company;
+
+Listing 7. An example of a query from a nested data structure.
+
+select name, actors
+
+from company;
+Listing 8. An example of a query selecting the whole sub-record from a nested data structure.
+
+
+Optimization of other joins with the nested data
+What if we want to select the bios of all the actors in a particular piece, using the cross-reference in piece_actors? Then of course the original join represented in the nested structure is of not much use. Another join would be needed, like the one shown in Listing 9.
+
+select actors.actor_name, actors.actor_bio from
+
+  company
+
+  left outer join pieces
+
+    on company.company_id = pieces.company_id
+
+  left outer join piece_actors
+
+    on piece.company_id = piece_actors.company_id
+
+    and piece.piece_id = piece_actors.piece_id
+
+  left outer join actors
+
+    on piece_actors.company_id = actors.company_id
+
+    and piece_actors.p_actor_name = actors.actor_name
+
+where
+
+  company.company_name = COMPANY1
+
+  and piece.piece_name = PIECE1
+
+;
+
+Listing 9. Join using the cross-reference.
+
+The nested structure is of not much help here by itself. An index would be needed to join the piece_actors and actors efficiently. But it can still provide the benefit of performance. To understand it, let's look again at [Dremel].
+
+Dremel can perform the large queries fast by partitioning the data to great many machines. It can do this because each nested record is independent, and thus a very fine-grained partitioning is easily possible.  Even an aggregation can be similarly partitioned. However Dremel has a complication with the joins. Dremel can easily join a large table to a small table by partitioning the large table and copying the small table to accompany each partition to its processing machine. But it just plain can't join two big tables, because of the combinatorial complexity.
+
+However in many cases an optimization is possible. Suppose that we have the information about a huge number of the theatrical companies in a table with the nested record, and this table is big. Since the nesting cannot be used directly, the selection of actor biographies by piece would require a self-join shown in Listing 10. It's a join of a large table to another large table, so Dremel could not handle it.
+
+
+select c2.actors from
+
+  company c1
+
+  join company c2
+
+    on c1.name = c2.name
+
+    and c1.piece.actor_name = c2.actors.name
+
+where
+
+  c1.name = COMPANY1
+
+  and c1.piece.name = PIECE1
+
+;
+
+Listing 10. Join on nested records using the cross-reference.
+
+But now let's look again at the nested records as representations of the results of a join in Listing 5. Note that the original join company_w already guarantees that the information about actors in a piece and the information about actors both belong to the same company. So when we look for the actors we don't need to look for them in the whole table. We need to look for them only in the same nested record. This brings back the locality and easy partitioning. The query can be written in the pseudo-code form shown in Listing 11. The “scope self join” there means that not the table company is joined with itself but one nested record from the table company is joined with the same nested record.
+
+select c2.actors from
+
+  company scope self join with aliases (c1, c2)
+
+    on c1.piece.actor_name = c2.actors.name
+
+where
+
+  c1.name = COMPANY1
+
+  and c1.piece.name = PIECE1
+
+;
+
+Listing 11. Join on nested records using the cross-reference and the data locality.
+
+It can even be made more efficient by using indexes. Dremel is a columnar DBMS, so it keeps the indexes global and can't help this situation much. But a normal record-based DBMS can keep a separate index in each nested record and use it for these self-joins.
+
+When the nested records are not too large, this record-local index doesn’t have to be kept on disk, instead it can be built in memory when the record is loaded into memory: the actors dimension can be iterated to build the index in memory, and then the piece_actors dimension can be iterated to build the join using that index. Of course, if the records are very small then the indexes would not provide any advantage.
+
+Even without the massive partitioning, the self-joins within the same nested record remove the need to search through the whole table and thus greatly improve the locality of access. The self-joins could also be performed within a sub-hierarchy of a nested record.
+
+Optimization of the aggregations with the nested records
+The aggregations can also be often conveniently limited to a nested record or its sub-hierarchy. It's equivalent to the key of that record or hierarchy being used as an aggregation key or its part. But it allows an extra optimization since all the data is already grouped locally
+
+This condition guarantees that the nested record or its sub-hierarchy translates to one or more aggregation groups, and no other record contributes to these groups. So there is no need to keep the group state through the whole query, the group can be aggregated and its result produced by iteration through one nested record, after which the state of that group can be purged.
+
+Related technologies
+The MS SQL already contains the APPLY clause that uses a similar but only partial approach, which serves as a validation of the usefulness of the concept. The results of an APPLY can potentially be fed directly into the NEST operator as described in [Nested].
+
+However APPLY has a limitation, very much the same as the limitation of the nested model described in [Nested]: the SELECT with APPLY produces the flat relational records, and thus can efficiently handle only one APPLY per SELECT (unless all the APPLYs but one are 1:1). Having multiple APPLY clauses with 1:M relation would cause a combinatorial explosion of every possible combination. In some cases this might be the desired result but probably not typically.
+
+On the other hand, a nested record with multiple dimensions can represent this kind of result set in a compact and efficient form. And then this compact result can be either transmitted out or used for some following operations. For example, if aiming for a massively parallel processing, the first step can group the relevant data into the nested records that contain all the relevant information, and the second step can farm out these records to thousands of machines processing them without the need for the external references.
+
+The importance of nested records for the conventional RDBMS
+To reiterate, this is not a proposal for a way of doing ORM that translates from objects to flat tables, and is not in any way related to ORM. It's not about the Xpath/XSLT kind of querying either. It’s a proposal of a way to extend the relational principles to the nested data structures, and thus make the nested data structures the first-class citizen in an RDBMS.
+
+As described in the previous section, a nested record with multiple dimensions can represent the result set of a multi-dimensional join in a compact and efficient form.
+
+To see why the grouping is important for the massively parallel processing, it’s useful to look again at Dremel's limitation in processing of the joins: it can join two tables only if one of them is small. The reason for that is that handling a query on a large table without a join can be parallelized easily: if you have 1000 machines, you can split the source table into 1000 partitions and have each machine work on its partition in parallel, then combine the results. But if this table gets joined to another table, each of these 1000 machines must have access to the whole second table. That's easy if the second table is small (the access to it from 1000 machines can then be efficiently cached) but if the second table is big then the access becomes much more expensive. However if the data happens to have some special locality properties where the mutually relevant data from both tables can be combined into a single message then these messages can again be efficiently spread out to 1000 machines.
+
+Thus having the nested records treated as first-class citizen in the relational databases can make this kind of operations easier, letting the relational databases include the advantages of the hierarchical databases. "First-class" means that not only the tables would be able to contain the nested records but the SELECTs should be able to produce the nested records as results.
+
+It would preserve all the relational logic unchanged, since on the logical level the nested records would be expanded into the flat classic form, operations performed, and the results packed back into the nested form. Of course, the actual execution would avoid doing the expensive intermediate steps of expansion directly, instead they can be optimized out, producing the same result in a more efficient way.
+
+Adapting a conventional RDMBS for nested records
+As shown above, taking advantage of the nested records in a common record-oriented RDBMS looks fairly straightforward. The following summarizes the changes:
+
+    Support for the nested record format. It must be supported not only in the input and tables but also in the output, in the query results and in the intermediate values. This includes the creation of the nested record types on the fly.
+    Support for the record-local indexes, to be stored along with the records and to be used in the in-record self-joins.
+    The full-table indexes should probably locate the data with the precision of a nested record, with the further search done by the in-record index.
+    Syntactic support in the query language for the scope-limited self joins (in a nested record, or in its sub-node).
+    The scope-limited joins don't have to be self-joins with the same nested record on both sides. In some cases it might be useful to find the second nested record and then perform the cross-product of the fields A from record 1 and fields B from the record 2.
+    Each node of a nested record can be seen as one side of join in the formation of the nested-record-as-a-join-result. Being able to refer to all the sub-nodes growing from that node would be highly useful when writing a join. Thus it would be highly useful to generate a pseudo-field similar to rowid for each node, thus making it a unique key of this node.
+
+
+From the data storage standpoint, there probably is not much use in trying to modify the nested records in place. In reality the nested records tend to be of the more reasonable size, so when a nested record is updated, the whole old record can be replaced with a new one. The same approach can be applied to the record locking, locking the whole nested record. If the nested records grow over a certain limit, they can be stored in fragments by sub-trees.
+
+Another possible approach is the automatic disassembly of the nested records into their flat “underlying tables” by reversing the join. Then they can be restored back by repeating the join.
+
+Yet another approach may create the nested records automatically from the flat tables by joining them and storing the results as nested. This operation is similar to the creation of the materialized views, only with a different storage format. This can improve the efficiency of the data access in certain cases. The original tables may then be kept or become virtual, since their data can always be extracted back from the nested format.
+
+Conclusion
+The relational database systems can take a great advantage of the nested records by treating them as join results, as well as of producing the results of the common joins in the nested format, and of “un-joining” the nested records in querying. This support should be reasonably easy to add to the existing RDBMS with the reasonably small extensions.
+
+References
+[Dremel] http://research.google.com/pubs/pub37217.html  Dremel: Interactive Analysis
+of Web-Scale Datasets
+[Nested] http://peqnp.blogspot.com/2013/01/nested-relational-algebra.html  Nested Relational Algebra
+[NoGood] http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.89.2966&rep=rep1&type=pdf  The Nested Relational Data Model is Not a Good Idea
+[Report] http://www.cs.indiana.edu/cgi-bin/techreports/TRNNN.cgi?trnum=TR259 A Recursive Algebra for Nested Relations

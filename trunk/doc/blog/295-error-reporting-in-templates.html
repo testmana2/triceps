@@ -1,0 +1,84 @@
+error reporting in the templates
+
+When writing the Triceps templates, it's always good to make them report any usage errors in the terms of the template (though the extra detail doesn't hurt either). That is, if a template builds a construction out of the lower-level primitives, and one of these primitives fail, the good approach is to not just pass through the error from the primitive but wrap it into a high-level explanation.
+
+This is easy to do if the primitives report the errors by returning them directly, as Triceps did in the version 1. Just check for the error in the result, and if an error is found, add the high-level explanation and return it further.
+
+It becomes more difficult when the errors are reported like the exceptions, which means in Perl by die() or confess(). The basic handling is easy, there is just no need to do anything to let the exception propagate up, but adding the extra information becomes difficult. First, you've got to explicitly check for these errors by catching them with eval() (which is more difficult than checking for the errors returned directly), and only then can you add the extra information and re-throw. And then there is this pesky problem of the stack traces: if the re-throw uses confess(), it will likely add a duplicate of at least a part of the stack trace that came with the underlying error, and if it uses die(), the stack trace might be incomplete since the native XS code includes the stack trace only to the nearest eval() to prevent the same problem when unrolling the stacks mixed between Perl and Triceps scheduling.
+
+Because of this, some of the template error reporting got worse in Triceps 2.0.
+
+Well, I've finally come up with the solution. The solution is not even limited to Triceps, it can be used with any kind of Perl programs. Here is a small example of how this solution is used, from Fields::makeTranslation():
+
+    my $result_rt = Triceps::wrapfess
+        "$myname: Invalid result row type specification:",
+        sub { Triceps::RowType->new(@rowdef); };
+
+The function Triceps::wrapfess() takes care of wrapping the confessions. It's very much like the try/catch, only it has the hardcoded catch logic that adds the extra error information and then re-throws the exception.
+
+Its first argument is the error message that describes the high-level problem. This message will get prepended to the error report when the error propagates up (and the original error message will get a bit of extra indenting, to nest under that high-level explanation).
+
+The second argument is the code that might throw an error, like the try-block. The result from that block gets passed through as the result of wrapfess().
+
+The full error message might look like this:
+
+Triceps::Fields::makeTranslation: Invalid result row type specification:
+  Triceps::RowType::new: incorrect specification:
+    duplicate field name 'f1' for fields 3 and 2
+    duplicate field name 'f2' for fields 4 and 1
+  Triceps::RowType::new: The specification was: {
+    f2 => int32[]
+    f1 => string
+    f1 => string
+    f2 => float64[]
+  } at blib/lib/Triceps/Fields.pm line 209.
+    Triceps::Fields::__ANON__ called at blib/lib/Triceps.pm line 192
+    Triceps::wrapfess('Triceps::Fields::makeTranslation: Invalid result row type spe...', 'CODE(0x1c531e0)') called at blib/lib/Triceps/Fields.pm line 209
+    Triceps::Fields::makeTranslation('rowTypes', 'ARRAY(0x1c533d8)', 'filterPairs', 'ARRAY(0x1c53468)') called at t/Fields.t line 186
+    eval {...} called at t/Fields.t line 185
+
+It contains both the high-level and the detailed description of the error, and the stack trace.
+
+The stack trace doesn't get indented, no matter how many times the message gets wrapped. wrapfess() uses a slightly dirty trick for that: it assumes that the error messages are indented by the spaces while the stack trace from confess() is indented by a single tab character. So the extra spaces of indenting are added only to the lines that don't start with a tab.
+
+Note also that even though wrapfess() uses eval(), there is no eval above it in the stack trace. That's the other part of the magic: since that eval is not meaningful, it gets cut from the stack trace, and wrapfess() also uses it to find its own place in the stack trace, the point from which a simple re-confession would dump the duplicate of the stack. So it cuts the eval and everything under it in the original stack trace, and then does its own confession, inserting the stack trace again. This works very well for the traces thrown by the XS code, which actually doesn't write anything below that eval; wrapfess() then adds the missing part of the stack.
+
+Wrapfess() can do a bit more. Its first argument may be another code reference that generates the error message on the fly:
+
+    my $result_rt = Triceps::wrapfess sub {
+            "$myname: Invalid result row type specification:"
+        },
+        sub { Triceps::RowType->new(@rowdef); };
+
+In this small example it's silly but if the error diagnostics is complicated and requires some complicated printing of the data structures, it will be called only if the error actually occurs, and the normal code path will avoid the extra overhead.
+
+It gets even more flexible: the first argument of wrapfess() might also be a reference to a scalar variable that contains either a string or a code reference. I'm not sure yet if it will be very useful but it was easy to implement. The idea there is that it allows to write only one wrapfess() call and then change the error messages from inside the second argument, providing different error reports for its different sections. Something like this:
+
+    my $eref;
+    return Triceps::wrapfess \$eref,
+        sub {
+          $eref = "Bad argument foo";
+          buildTemplateFromFoo();
+          $eref = sub {
+            my $bardump = $argbar->dump();
+            $bardump =~ s/^/    /mg;
+            return "Bad argument bar:\n  bar value is:\n$bardump";
+           }
+          buildTemplateFromBar();
+          ...
+
+       };
+
+It might be too flexible, we'll see how it works.
+
+Internally, wrapfess() uses the function Triceps::nestfess() to re-throw the error. Nestfess() can also be used directly, like this:
+
+eval {
+  buildTemplatePart();
+};
+if ($@) {
+
+  Triceps::nestfess("High-level error message", $@);
+}
+
+The first argument is the high-level descriptive message to prepend, the second argument is the original error caught by eval. Nestfess() is responsible for all the smart processing of the indenting and stack traces, wrapfess() is really just a bit of syntactic sugar on top of it.

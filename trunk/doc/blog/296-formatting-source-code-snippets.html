@@ -1,0 +1,53 @@
+formatting the source code snippets
+
+I've got to printing the snippets of the source code in the error messages when the said code fails to compile and realized that it could be printed better. So I wrote a couple of helper functions to print it better.
+
+First of all, it could be indented better, to match the indenting of the rest of the error message.
+
+Second (but connected), it could be left-aligned better:  the code snippets tend to have the extra spacing on the left.
+
+And third, it could use the line numbers, to make the error location easier to find.
+
+The magic is done with two functions, Triceps::Code::alignsrc() and Triceps::Code::numalign(). They work in the exact same way, have the same arguments, only numalign() adds the line numbers while alignsrc() doesn't.
+
+Here is an example of use:
+
+        confess "$myname: error in compilation of the generated function:\n  $@function text:\n"
+        . Triceps::Code::numalign($gencode, "  ") . "\n";
+
+It can produce an error message like this (with a deliberately introduced syntax error):
+
+Triceps::Fields::makeTranslation: error in compilation of the generated function:
+  syntax error at (eval 27) line 13, near "})
+"
+function text:
+     2 sub { # (@rows)
+     3   use strict;
+     4   use Carp;
+     5   confess "template internal error in Triceps::Fields::makeTranslation: result translation expected 1 row args, received " . ($#_+1)
+     6     unless ($#_ == 0);
+     7   # $result_rt comes at compile time from Triceps::Fields::makeTranslation
+     8   return $result_rt->makeRowArray(
+     9     $_[0]->get("one"),
+    10     $_[0]->get("two"),
+    11   );
+    12 })
+ at /home/babkin/w/triceps/trunk/perl/Triceps/blib/lib/Triceps/Fields.pm line 219
+    Triceps::Fields::makeTranslation('rowTypes', 'ARRAY(0x2943cb0)', 'filterPairs', 'ARRAY(0x2943b30)', '_simulateCodeError', 1) called at t/Fields.t line 205
+    eval {...} called at t/Fields.t line 204
+
+
+The first argument of alignsrc() and numalign() is the code snippet string to be aligned. The following will be done to it:
+
+    The empty lines at the front will be removed. numalign() is smart enough to take the removed lines into account and adjust the numbering. That's why the numbering in the error message shown above starts with 2. You can also get the number of the removed lines afterwards, from the global variable $Triceps::Code::align_removed_lines.
+    The \n at the end of the snippet will be chomped. But only one, the rest of the empty lines at the end will be left alone.
+    Then the "baseline" indenting of the code will be determined by looking at the first three and last two lines. The shortest non-empty indenting will be taken as the baseline. If some lines examined start with spaces and some start with tabs, the lines starting with tabs will be preferred as the baseline indenting.
+    The baseline indenting will be removed from the front of all lines. If some lines in the middle of the code have a shorter indenting, they will be left unchanged.
+    The tabs will be replaced by two spaces each. If you prefer a different replacement, you can specify it as the third argument of the function.
+    In numalign() the line numbers will be prepended to the lines.
+    The indenting from the second argument of the function will be prepended to the lines.
+
+
+The second argument  contains the new indenting that allows to align the code nicely with the rest of the error message. Technically, it's optional, and will default to an empty string.
+
+The third argument is optional and allows to provide an alternative replacement to the tab characters in the code. If it's an empty string, it will revert to the default two spaces "  ".  To keep the tabs unchanged, specify it as "\t". 

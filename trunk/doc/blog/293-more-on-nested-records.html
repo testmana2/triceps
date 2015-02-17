@@ -1,0 +1,41 @@
+more on nested records (and Oracle)
+
+As people have pointed out to me, Oracle has the concept of "nested tables" and "variable arrays" (VARRAY). Since at least the version 9i, a very long time ago.
+
+The nested tables have a difference in how they store the data: they break out the repeating sections into a separate table and automatically create the id fields to link them together. So the select just does an implicit join. It's like an embedded ORM (by the way, there is also a concept of references to rows, also apparently implemented in an ORM way). Strangely, they say that the nested tables are slower than the usual joins. Not sure, why.
+
+The VARRAYs are more like the real nested structures, they store the data directly in the row, and they preserve the order of nested elements. However the maximal size of VARRAYs has to be declared in advance.
+
+Obviously, the nested tables (the ORM version) would be much faster on updates, they can change the nested parts very easily without changing the rest of the records. And also faster on scanning of the non-repeating parts.
+
+The version with the repeated parts stored directly in the records, such as protobufs or varrays should be faster on reading these repeated parts.
+
+The syntax for accessing the nested parts is like this:
+
+select
+  upper.key,
+  nested.*
+from
+  main_table upper,
+  table(upper.nested) nested;
+
+So you can select the nested fields as a single field of a record type or you can flatten it as shown above. And the joins within the same top-level records should be possible to express in the same syntax like this:
+
+from
+  main_table upper,
+  table(upper.nested1) nested1,
+  table(upper.nested2) nested2;
+
+There also are the examples of deleting the nested parts, like:
+
+delete from table (
+  select nested from upper where key = 1234
+) nested
+where
+  nested.field = 5678;
+
+Or even by the whole value of the nested part.
+
+And by the same example, you can insert a nested part into the record, or update one.
+
+But the part that seems to be missing is the un-flattening. Can you select data from one table with nested data, re-format the nested parts, create different nested records and either return them from select or insert them into another table? I haven't found any examples of that. It looks like the nested records aren't the first-class citizen in Oracle either. 
