@@ -702,7 +702,9 @@ sub new # ($class, $optionName => $optionValue ...)
 
 		${$self->{saveCodeTo}} = $gencmp if (defined($self->{saveCodeTo}));
 		$self->{compare} = eval $gencmp;
-		confess("Internal error: $class failed to compile the comparator:\n$@\nfunction text:\n$gencmp ")
+		# $@ already contains an \n at the end
+		confess("Internal error: $class failed to compile the comparator:\n$@function text:\n"
+				. Triceps::Code::numalign($gencmp, "  ") . "\n")
 			if $@;
 	}
 
@@ -949,8 +951,10 @@ sub genComparison # ($self, $query)
 			}';
 
 	my $compare = eval $gencmp;
+	# $@ already contains an \n at the end
 	confess("Internal error: Query '" . $self->{name} 
-			. "' failed to compile the comparator:\n$@\nfunction text:\n$gencmp ")
+			. "' failed to compile the comparator:\n$@function text:\n"
+			. Triceps::Code::numalign($gencmp, "  ") . "\n")
 		if $@;
 
 	# for debugging

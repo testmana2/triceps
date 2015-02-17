@@ -307,7 +307,8 @@ sub make # (optName => optValue, ...)
 
 	# compile the computation function
 	my $compFun = eval $compText
-		or confess "$myname: error in compilation of the aggregation computation:\n  $@\nfunction text:\n$compText ";
+		or confess "$myname: error in compilation of the aggregation computation:\n  $@function text:\n"
+			. Triceps::Code::numalign($compText, "  ") . "\n";
 
 	# build and add the aggregator
 	my $agg = Triceps::wrapfess
@@ -878,6 +879,7 @@ tryBadOptValue(
 			symbol => "string", "_defective_syntax", sub {$_[0]->get("symbol");},
 		],
 );
+#print $@;
 ok($@, qr/^MySimpleAggregator::make: error in compilation of the aggregation computation:/);
 
 tryBadOptValue(
