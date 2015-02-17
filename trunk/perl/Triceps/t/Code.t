@@ -51,9 +51,9 @@ ok(!defined $res);
 ok($@, qr/^Code snippet: failed to compile the source code
 Compilation error: syntax error at .*
 The source code was:
-sub {
-1 \) 2
-}
+     1 sub {
+     2 1 \) 2
+     3 }
  at .*\/Code.pm line \d*\.?
 \tTriceps::Code::compile\('1 \) 2'\) called at .*\/Code.t line \d*\.?
 \teval {...} called at .*\/Code.t line \d*\.?
@@ -65,9 +65,9 @@ ok(!defined $res);
 ok($@, qr/^test code: failed to compile the source code
 Compilation error: syntax error at .*
 The source code was:
-sub \{
-1 \) 2
-\}
+     1 sub {
+     2 1 \) 2
+     3 }
  at .*\/Code.pm line \d*\.?
 \tTriceps::Code::compile\('1 \) 2', 'test code'\) called at .*\/Code.t line \d*\.?
 \teval {...} called at .*\/Code.t line \d*\.?
