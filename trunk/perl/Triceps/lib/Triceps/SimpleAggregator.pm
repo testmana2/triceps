@@ -247,8 +247,9 @@ sub make # (optName => optValue, ...)
 
 			$id++;
 		}
-		$rtRes = Triceps::RowType->new(@rtdefRes);
-			# XXX extended error "$myname: invalid result row type definition: $!";
+		$rtRes = Triceps::wrapfess 
+			"$myname: invalid result row type definition:",
+			sub { Triceps::RowType->new(@rtdefRes); };
 	}
 	${$opts->{saveRowTypeTo}} = $rtRes if (defined($opts->{saveRowTypeTo}));
 
@@ -280,11 +281,13 @@ sub make # (optName => optValue, ...)
 	${$opts->{saveComputeTo}} = $compText if (defined($opts->{saveComputeTo}));
 
 	# build and add the aggregator
-	my $agg = Triceps::AggregatorType->new($rtRes, $opts->{name}, undef, $compText, @compArgs);
-		# XXX extended error "$myname: failed to build an aggregator type: $! ";
+	my $agg = Triceps::wrapfess
+		"$myname: failed to build an aggregator type:",
+		sub { Triceps::AggregatorType->new($rtRes, $opts->{name}, undef, $compText, @compArgs); };
 
-	$idx->setAggregator($agg);
-		# XXX extended error "$myname: failed to set the aggregator in the index type: $! ";
+	Triceps::wrapfess
+		"$myname: failed to set the aggregator in the index type:",
+		sub { $idx->setAggregator($agg); };
 
 	return $opts->{tabType};
 }
