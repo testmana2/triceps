@@ -27,6 +27,23 @@ See the file COPYRIGHT for the copyright notice and license information
 
 -->
 
+	<sect1 id="sc_notes_current">
+		<title>After Release 2.0.0 (current working branch)</title>
+
+		<itemizedlist>
+			<listitem>
+			Fixed the version information that was left incorrect, as 0.99.
+			Used a more generic pattern in tests for Perl error messages that have 
+			changed in the more recent versions of Perl (per CPAN report #99268).
+			</listitem>
+
+			<listitem>
+			Added the more convenient way to wrap the error reports in Perl,
+			<pre>Triceps::nestfess()</pre> and <pre>Triceps::wrapfess()</pre>.
+			</listitem>
+		</itemizedlist>
+	</sect1>
+
 	<sect1 id="sc_notes_2_0_0">
 		<title>Release 2.0.0</title>
 

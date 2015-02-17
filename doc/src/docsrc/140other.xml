@@ -723,10 +723,17 @@ sub new # ($class, $optName => $optValue, ...)
 		->addSubIndex("primary", 
 			Triceps::IndexType->newHashed(key => $dataset->{key})
 		);
-	$dataset->{tt}->initialize();
+	Triceps::wrapfess 
+		"$myname: Collapse table type creation error for dataset '" . $dataset->{name} . "':",
+		sub { $dataset->{tt}->initialize(); };
 
-	$dataset->{tbInsert} = $self->{unit}->makeTable($dataset->{tt}, $self->{name} . "." . $dataset->{name} . ".tbInsert");
-	$dataset->{tbDelete} = $self->{unit}->makeTable($dataset->{tt}, $self->{name} . "." . $dataset->{name} . ".tbDelete");
+	Triceps::wrapfess 
+		"$myname: Collapse internal error: insert table creation for dataset '" . $dataset->{name} . "':",
+		sub { $dataset->{tbInsert} = $self->{unit}->makeTable($dataset->{tt}, $self->{name} . "." . $dataset->{name} . ".tbInsert"); };
+
+	Triceps::wrapfess 
+		"$myname: Collapse internal error: delete table creation for dataset '" . $dataset->{name} . "':",
+		sub { $dataset->{tbDelete} = $self->{unit}->makeTable($dataset->{tt}, $self->{name} . "." . $dataset->{name} . ".tbDelete"); };
 </pre>
 
 		<para>
@@ -764,9 +771,14 @@ sub new # ($class, $optName => $optValue, ...)
 <!-- lib/Triceps/Collapse.pm -->
 <pre>
 	# create the labels
-	$dataset->{lbIn} = $self->{unit}->makeLabel($dataset->{rowType}, $self->{name} . "." . $dataset->{name} . ".in", 
-		undef, \&_handleInput, $self, $dataset);
-	$dataset->{lbOut} = $self->{unit}->makeDummyLabel($dataset->{rowType}, $self->{name} . "." . $dataset->{name} . ".out");
+	Triceps::wrapfess 
+		"$myname: Collapse internal error: input label creation for dataset '" . $dataset->{name} . "':",
+		sub { $dataset->{lbIn} = $self->{unit}->makeLabel($dataset->{rowType}, $self->{name} . "." . $dataset->{name} . ".in", 
+			undef, \&_handleInput, $self, $dataset); };
+
+	Triceps::wrapfess 
+		"$myname: Collapse internal error: output label creation for dataset '" . $dataset->{name} . "':",
+		sub { $dataset->{lbOut} = $self->{unit}->makeDummyLabel($dataset->{rowType}, $self->{name} . "." . $dataset->{name} . ".out"); };
 </pre>
 
 		<para>
@@ -781,7 +793,9 @@ sub new # ($class, $optName => $optValue, ...)
 <pre>
 	# chain the input label, if any
 	if (defined $lbFrom) {
-		$lbFrom->chain($dataset->{lbIn});
+		Triceps::wrapfess 
+			"$myname: Collapse internal error: input label chaining for dataset '" . $dataset->{name} . "' to '" . $lbFrom->getName() . "' failed:",
+			sub { $lbFrom->chain($dataset->{lbIn}); };
 		delete $dataset->{fromLabel}; # no need to keep the reference any more, avoid a reference cycle
 	}
 </pre>
