@@ -483,7 +483,9 @@ sub new # (class, optionName => optionValue ...)
 	} else {
 		$self->{joiner} = eval $genjoin; # compile!
 	}
-	Carp::confess("Internal error: LookupJoin failed to compile the joiner function:\n$@\nfunction text:\n$genjoin ")
+	# $@ already contains an \n at the end
+	Carp::confess("Internal error: LookupJoin failed to compile the joiner function:\n$@function text:\n"
+			. Triceps::Code::numalign($genjoin, "  ") . "\n")
 		if $@;
 
 	# now create the result row type

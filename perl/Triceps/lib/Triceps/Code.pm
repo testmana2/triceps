@@ -46,7 +46,8 @@ sub compile # ( $code_ref_or_string, $optional_code_description )
 		# $@ alerady includes \n, so don't add another one after it
 		Carp::confess(
 			"$descr: failed to compile the source code\n"
-			. "Compilation error: $@The source code was:\n$src");
+			. "Compilation error: $@The source code was:\n"
+			. Triceps::Code::numalign($src, "  ") . "\n");
 	}
 
 	# XXX This is a cryptic message in case if the user gets something very
