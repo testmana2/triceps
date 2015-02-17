@@ -1,0 +1,15 @@
+compact vs detailed
+
+A few days ago I've been editing the Developer's Guide chapter on TQL when an idea had occurred to me:
+
+Perhaps, what makes the typical CEP model so hard to read is that they try to represent both the topology and all the details in one go. Yes, I'm a fan of reading the program text sequentially, and I've been saying that the problem with SQL is that it's written backwards: each statement specifies the results first and then the computation; if the results went after computation, the whole flow would be much easier to read sequentially. But it still doesn't solve the problem of branching, and maybe doesn't solve the fundamental difficulty at all.
+
+Maybe the right way to write the CEP programs is to write out the pipelines in a short notation, and then define the elements of these pipelines in all detail separately. So the main program might look something like:
+
+inputTrades | checkTrades -> storeTrades
+inputSymbols -> storeSymbols
+(storeTrades, storeSymbols) | enrichTrades | outputData
+
+and then each of these stages can be defined in detail separately. No arguments, no details at all in the pipeline  specification. All the details would go into the detailed definitions. So each module would consist of these two parts: the pipeline outline and the detailed definitions of the pipeline elements. And then these modules can be combined into the higher-level modules.
+
+Though it's still not clear, how to show say the maintenance with the expiration of the data in this notation? Would it make sense in the more complicated cases? 

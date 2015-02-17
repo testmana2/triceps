@@ -1,0 +1,14 @@
+shared_ptr-2
+
+I've figured out, what was my problem with shared_ptr. The problems there start with using reset(pte) to store a newly constructed object in an existing shared_ptr. Which provokes into using reset(ptr) for storing any pointers. The solution is to never use reset(ptr). Instead either always turn the pointers into shared_ptr first, then assign them. Such as one of:
+
+something->shared_ = make_shared<Object>(args);
+something->shared_ = shared_ptr<Object>(new Object(args));
+
+or even make the constructors protected and wrap them into the static methods that would return a shared_ptr.
+
+Which puts shared_ptr close enough to Autoptr. It's still more awkward and less efficient but a potential advantage is that it can handle any object, without the reference counting built into the objects themselves.
+
+A consequence of this approach is that they absolutely need weak_ptr, they can't just have the naked pointers sitting around pointing up the trees, that break sthe whole paradigm. Having the weak references is also convenient if you really need them. But as my experience with Triceps shows, they are generally overrated. Never had to use them for Triceps, and the ptwrap library I use (and wrote) has them!
+
+If used to point up the tree, there is not that much advantage compared to a simple pointer because it's typically easy for the code to just hold that up-the-tree object separately while dealing with it. If used between the peer objects, one of the objects can usually be split into two parts. I.e. If there are objects A and B, B is usually interested not in the whole A but in a part of it. So separate that part into the object C. Then A would refer to B and C, and B would refer to C. 

@@ -1,0 +1,96 @@
+monads
+
+I've recently been bullshitting onna internets with some fans of the functional programming, and the said fans are all ablaze about the monads. Yet they have a very hard time explaining what's the benefit of the monads, and even what these monads are. So I've got around and read up about this stuff, and bullshitted some more, and here it is: the short explanation of the monads in programming in all their glory. This is the third version of it that I've figured out, and even though it might happen that I'd have more, I think that I've got to the bottom of it this time. The first version of my understanding was gained from Wikipedia, and as it always happens with Wikipedia,  it turned out to be crap. Not all crap, only half-crap, but still.
+
+If you're interested in the benefits, let me tell it up front: they seem to be that the glorious community of functional programming can now honestly use the loops and imbibe all their goodness with break and continue statements, and even exceptions, without losing the cherry of the strict mathematical theory. For the rest of us, nothing new.
+
+Now, to the details. What the monads are really about is the iteration on containers, and nesting these iterations. For use in a monad, a container of objects has to have a couple of properties.
+
+First, if you have a container, you must be able to iterate over it and create another container with exactly the same structure (i.e. if you can find an element in the first container in some way, you must be able to find an element in the second container in the same way) but different data (difference may be both in the value and the type of the data). The data is supposed to  be the result of some operation of the data from the first container at the same position but the concept of operation is quite wide-open.
+
+This property means that if your container is a list, you need to know how to create another list of the same number of elements, if it's an associative array, you need to know how to create another associative array with the same keys, if your container is a tree, you need to know how to create another tree with the exact same structure.
+
+Second, if you have two containers, you need to have some rule on how to "combine" them into the third container of the same type. The structure of that third container can be any, as long as it follows some consistent rule, and the data elements represent the results of some operation on one element from the first container and one element from the second container. For example, for the lists you can pick the rule that concatenates them, or produces every possible pair of elements from the first list and the second list, or combines the elements at the same position in both lists. Just as in the first property, the data placed in the result would be the result of some operation of the data from the two incoming containers.
+
+What the monad does is apply that combination rule over a sequence of containers, combining it into one. The first two get combined together, then that one is combined with the third one, and so on. The monad is really a bunch of nested loops.  In the texts about monads they like to discuss the examples monads on Haskell kinds of containers, like lists, and Maybe (a value that may be NULL), and IO (a strange container that performs input/output), but for all I can tell, the most entertaining and straightforward container would be an associative array, or as its variety, a database table.
+
+For example, the following Perl loop represents a monad (remember, the data in the result may any operation on the data extracted from the argument container).
+
+my %result;
+my %a = ...; my %b = ...; my %c = ...;
+
+while (($ka, $va) = each %a) {
+  while (($kb, $vb) = each %b) {
+    while (($kc, $vc) = each %c) {
+      $result{"$ka,$kb,$kc"} = printf("%d" , $vc? $va: $vb);
+    }
+  }
+}
+
+And if A, B and C were tables, that would be an unconditional join. The loops don't have to go over the whole container, they may even pick only one or even zero elements, and if such is the rule, they may as well be ifs:
+
+while (($ka, $va) = each %a) {
+  if (exists $b{$ka} ) {
+    if (exists $c{$ka} ) {
+      $result{"$ka"} = [ $va, $b{$ka}, $c{$ka} ];
+    }
+
+  }
+
+}
+
+And it's also a monad! If these were tables, it would be a left join.
+
+The first property of the container lets you do a loop without nesting, and the second property allows to do any number of nestings by applying it recursively.
+
+
+The rules as stated above say that each nesting must follow the same rule of iteration on the same container type. But there is a weaseling way around it: we can always say that the container is a union that also contains the indication of what operation needs to be done with it, and then the rule that combines two containers would look at this indication in the argument containers and act accordingly. The type Maybe from Haskell does exactly this (and a monad on it provides the Haskell version of what you can think of as exceptions or break/continue). We can also weasel further and say that oh, we know this indication hardcoded at the compilation time, so instead of putting it into the container and then extracting it, we'll just hardcode the loop appropriately (and yes, Haskell does this). The end result is that ANY nested loops can form a monad. And since the if is a special case of a loop, and the unconditional execution is a special case of an if, any procedural code can be a monad.
+
+
+Not everything would be a monad, but guess what, you can nest monads in monads, and that would give everything. And the returned container doesn't have to be anything like any of the containers involved in the loop, it's the same weasely thing.
+
+
+The only thing that is left separating the monads from the usual procedural code is that all the data defined outside the loops is read-only (the local variables in the loop blocks can be read-write, this also can be explained in the weasely ways, however the variables outside the current block also can't be changed), and the only result produced is the returned container. However the result can contain a description of how the outside data needs to be modified, and the caller of the monad is then free to apply that description. It's just the ass-backwards ways of the functional programming. So with enough nested and recursive monads (not just nested loops but nested monads) and this apply-description business, all this monkeying can properly simulate the procedural programming.
+
+That description thing can also be though of as the redo log of a transaction: first the redo log is collected and then the whole transaction is applied. Obviously, for the operations to see the state as modified by the previous operations in a transaction, they would have to dig through the redo log.
+
+
+The definition of the container is also pretty wide. Containers may among other things be infinite - "for (;;)" or "for (i=0;; i++)"  are examples of iteration over an infinite container.
+
+
+This brings us to the point of how the monads are related to CEP.  Each nesting level in the monad gets an item of key and data from the previous level, uses it somehow to select zero or more values for the container it has, and sends to the next nesting level a newly combined item of key and data information for every value selected. It's a pipeline! The pipeline approach was actually the second version of my understanding of the monads.
+
+
+What kind of a pipeline it is? It's a straight one, no branching, nor god forbid, joining. And it's a read-only one: each stage of the pipeline contains no modifiable state, it's all read-only. All the updates have to be carried in the data traveling through the pipeline. And each stage of the pipeline essentially sends out a copy of its incoming data with its own section added to it.
+
+
+Quite boring and useless. By the way, note that the join as described before would work only on the static tables, not on streams.
+
+Now we get a bit off the monad subject as such and get into the depths of Haskell's dealing with pipelines.
+
+Of course there are weaseling ways around the boring limitations. First, each stage of the pipeline may contain the nested pipelines (i.e. nested monads), and may decide, which of the nested pipelines to take. That gives the fork-join topology (but as you may notice no "fork-and-no-join"). Second, these nested pipelines can be nested further to infinity. Third, the input point itself is a data object that can be passed through the pipeline.
+
+
+This third item is something that takes some time getting the mind around. Basically, the first stage in the pipeline says "I'm not going to get the input from the outside world any more, instead I'm passing this functionality to the second stage". Obviously, after that the first stage becomes dead and can as well be discarded. Well, not always: there may be MULTIPLE data input points, either within one stage (remember, they are just data, and can be held together), or sprinkled throughout the pipeline. The first stage will become dead only after it get rids of all its inputs. But let's just say that there is one input point.
+
+
+So, with all this weaseling a Haskell program simulates the changing states with two pipelines (i.e. monads):
+
+
+The pipeline A implements the computation of the next application state.
+
+
+The pipeline B consists of two stages:
+1. Read one item of data, call pipeline A, collect the result form it, and send its result along with the input point to the stage 2.
+2. Instantiate a nested copy of the pipeline B,  then send the input point and the state to that pipeline, and let it do its work.
+
+
+It's an infinite number of pipelines, created as long at there is more data coming. And being the tail recursion, Haskell optimizes it out by replacing the second stage of pipeline B with a new copy of pipeline B, instead of nesting it. And it discards the old stage 1 after it becomes dead. It really becomes a dynamic pipeline, endlessly growing at the back and dying out at the front. Of course, when things get to the actual running, that gets optimized out too. Instead of creating a new pipeline they just turn back to the old pipeline, say "now it's the new pipeline", give it the new state and let it run along.
+
+
+As far as the parallelism is concerned, the stages of the pipeline A can work in parallel, but then when the time comes to apply the result and get the next input, it hiccups and becomes single-threaded.
+
+
+Is there an important lesson in this? I don't see any, at least yet. Other than an interesting mental exercise in the ass-backwardness. And from all the asking of the monad enthusiasts on the internets, what exactly is the benefit they get from the monads, I didn't get any answer other than the hand-waving about the Mathematical Foundations. For all I can tell, there isn't one.
+
+If you're interested in learning more about Haskell and its monads, I can recommend http://learnyouahaskell.com/
