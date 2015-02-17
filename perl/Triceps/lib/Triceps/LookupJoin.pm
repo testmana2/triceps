@@ -498,8 +498,9 @@ sub new # (class, optionName => optionValue ...)
 	
 	# chain the input label, if any
 	if (defined $self->{leftFromLabel}) {
-		$self->{leftFromLabel}->chain($self->{inputLabel});
-		# XXX extended error "$myname internal error: input label chaining to '" . $self->{leftFromLabel}->getName() . "' failed:\n$! ";
+		Triceps::wrapfess
+			"$myname internal error: input label chaining to '" . $self->{leftFromLabel}->getName() . "' failed:",
+			sub { $self->{leftFromLabel}->chain($self->{inputLabel}); };
 		delete $self->{leftFromLabel}; # no need to keep the reference any more, avoid a reference cycle
 	}
 

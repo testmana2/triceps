@@ -565,18 +565,23 @@ tryBadOptValue(
 			symbol => "string[]", "last", sub {$_[0]->get("symbol");},
 		],
 );
-# XXX no error wrapper yet
-#ok($@, qr/^Triceps::SimpleAggregator::make: invalid result row type definition: Triceps::RowType::new: field 'symbol' string array type is not supported/);
-ok($@, qr/^Triceps::RowType::new: field 'symbol' string array type is not supported/);
+#print $@;
+ok($@, qr/^Triceps::SimpleAggregator::make: invalid result row type definition:
+  Triceps::RowType::new: field 'symbol' string array type is not supported
+  Triceps::RowType::new: The specification was: \{
+    symbol => string\[\]
+  \} at /);
 
 tryBadOptValue(
 		result => [
 			symbol => "string", "_defective_syntax", sub {$_[0]->get("symbol");},
 		],
 );
-# XXX no error wrapper yet
-#ok($@, qr/^Triceps::SimpleAggregator::make: failed to build an aggregator type: Triceps::AggregatorType::new\(handler\): failed to compile the source code\nCompilation error: Bareword "XXXXXXX" not allowed while "strict subs" in use/);
-ok($@, qr/^Triceps::AggregatorType::new\(handler\): failed to compile the source code\nCompilation error: Bareword "XXXXXXX" not allowed while "strict subs" in use/);
+#print $@;
+ok($@, qr/^Triceps::SimpleAggregator::make: failed to build an aggregator type:
+  Triceps::AggregatorType::new\(handler\): failed to compile the source code
+  Compilation error: Bareword "XXXXXXX" not allowed while "strict subs" in use at .*
+  The source code was:/);
 
 tryBadOptValue(
 		result => [

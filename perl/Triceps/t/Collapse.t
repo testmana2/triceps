@@ -317,12 +317,11 @@ sub tryBadDataOptValue # (optName, optValue, ...)
 }
 
 &tryBadDataOptValue("key", [ "xxx" ]);
-# XXX This explanatory message doesn't propagate after the
-# TableType got converted to the new error reporting.
-# qr/^Collapse table type creation error for dataset 'idata':
-ok($@, qr/index error:
-  nested index 1 'primary':
-    can not find the key field 'xxx' at/);
+#print $@;
+ok($@, qr/Triceps::Collapse::new: Collapse table type creation error for dataset 'idata':
+  index error:
+    nested index 1 'primary':
+      can not find the key field 'xxx' at /);
 
 #########
 # clearing
