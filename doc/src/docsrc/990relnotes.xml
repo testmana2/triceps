@@ -29,6 +29,10 @@ See the file COPYRIGHT for the copyright notice and license information
 
 	<sect1 id="sc_notes_current">
 		<title>After Release 2.0.0 (current working branch)</title>
+	</sect1>
+
+	<sect1 id="sc_notes_2_0_1">
+		<title>Release 2.0.1</title>
 
 		<itemizedlist>
 			<listitem>
