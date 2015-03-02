@@ -303,7 +303,7 @@ Sergey A. Babkin, E<lt>babkin@users.sf.netE<gt> or E<lt>sab123@hotmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2011-2014 by Sergey A.Babkin
+(C) Copyright 2011-2015 Sergey A. Babkin.
 
 This library distributed under the Triceps edition of Lesser GPL license version 3.0.
 
