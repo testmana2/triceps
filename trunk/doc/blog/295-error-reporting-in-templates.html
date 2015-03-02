@@ -63,7 +63,7 @@ It gets even more flexible: the first argument of wrapfess() might also be a ref
             my $bardump = $argbar->dump();
             $bardump =~ s/^/    /mg;
             return "Bad argument bar:\n  bar value is:\n$bardump";
-           }
+           };
           buildTemplateFromBar();
           ...
 
