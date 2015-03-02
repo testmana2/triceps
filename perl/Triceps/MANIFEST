@@ -86,6 +86,7 @@ t/Braced.t
 t/CloneSkip.t
 t/Code.t
 t/Collapse.t
+t/Errors.t
 t/Fields.t
 t/Fn.t
 t/FrameMark.t
