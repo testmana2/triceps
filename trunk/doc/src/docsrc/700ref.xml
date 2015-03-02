@@ -64,6 +64,7 @@ See the file COPYRIGHT for the copyright notice and license information
 		</para>
 
 		<xi:include href="file:///DOCS/701top.xml"/>
+		<xi:include href="file:///DOCS/703code.xml"/>
 		<xi:include href="file:///DOCS/708unit.xml"/>
 		<xi:include href="file:///DOCS/710tabtype.xml"/>
 		<xi:include href="file:///DOCS/712idxtype.xml"/>

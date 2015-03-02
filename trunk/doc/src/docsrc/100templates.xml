@@ -1327,7 +1327,23 @@ sub new # ($class, $optionName => $optionValue ...)
 
 		<para>
 		The code of the anonymous comparison function gets generated in <pre>$gencmp</pre> 
-		and then compiled by using <pre>eval</pre>. <pre>eval</pre> returns the pointer to the
+		and then compiled by using <pre>eval</pre>. 
+		</para>
+
+		<indexterm>
+			<primary>numalign</primary>
+		</indexterm>
+		<para>
+		If the compilation fails (which should never happen, since the generated code
+		should be always correct), it's printed out as a part of the error message,
+		making the diagnostic easier. The function <pre>numalign()</pre> makes the error messages
+		easier to match to the code by printing out the line numbers with the code.
+		It's described in detail in
+		<xref linkend="sc_ref_code" xrefstyle="select: label quotedtitle pageabbrev"/>&xrsp;.
+		</para>
+
+		<para>
+		<pre>eval</pre> returns the pointer to the
 		compiled function which is then used at run time. The generation
 		uses all the same logic to decide on the string or numeric
 		comparisons, and also effectively unrolls the loop. When generating
