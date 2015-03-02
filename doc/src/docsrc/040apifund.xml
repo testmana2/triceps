@@ -448,6 +448,7 @@ $it= Triceps::IndexType->newPerlSorted("b_c", undef,
 <pre>
 $code = Triceps::Code::compile($code_ref_or_source);
 </pre>
+
 		<para>
 		It takes either a code reference or a source code string as an argument
 		and returns the reference to the compiled code. If the argument was a
@@ -471,7 +472,7 @@ $code = Triceps::Code::compile($code_ref_or_source);
 		<para>
 		The optional second argument can be used to provide information
 		about the meaning of the code for the error messages. If it's undefined
-		then the default is "Code snippet":
+		then the default is <quote>Code snippet</quote>:
 		</para>
 
 <pre>
