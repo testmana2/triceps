@@ -7,7 +7,7 @@
 
 package Triceps::TrieadOwner;
 
-our $VERSION = 'v2.0.0';
+our $VERSION = 'v2.0.1';
 
 use Carp;
 

@@ -6,7 +6,7 @@
 
 package Triceps::UnitTracerPerl;
 
-our $VERSION = 'v2.0.0';
+our $VERSION = 'v2.0.1';
 
 our @ISA = qw(Triceps::UnitTracer);
 1;
