@@ -95,7 +95,7 @@ See the file COPYRIGHT for the copyright notice and license information
 		</para>
 
 		<para>
-		Also, a major goal of Triceps is the extendability.  And the best way
+		Also, a major goal of Triceps is the extensibility.  And the best way
 		to learn how to extend it, is by looking up close at how it has already
 		been extended.
 		</para>
@@ -228,7 +228,9 @@ package DB;
 
 		<para>
 		More of the error handling details will be discussed later in
-		<xref linkend="sc_sched_unwind" xrefstyle="select: label quotedtitle pageabbrev"/>&xrsp;.
+		<xref linkend="sc_sched_unwind" xrefstyle="select: label quotedtitle pageabbrev"/>&xrsp;
+		and 
+		<xref linkend="sc_template_wrapfess" xrefstyle="select: label quotedtitle pageabbrev"/>&xrsp;.
 		</para>
 	</sect1>
 

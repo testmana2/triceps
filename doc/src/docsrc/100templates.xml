@@ -494,11 +494,11 @@ Triceps::X::DumbClient::run(\%dispatch);
 > tWindow,OP_INSERT,1,AAA,10,10
 > tWindow,OP_INSERT,3,AAA,20,20
 > qWindow,OP_INSERT
-> tWindow,OP_INSERT,5,AAA,30,30
-> qWindow,OP_INSERT
 qWindow.out,OP_INSERT,1,AAA,10,10
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_NOP,,,,
+> tWindow,OP_INSERT,5,AAA,30,30
+> qWindow,OP_INSERT
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_INSERT,5,AAA,30,30
 qWindow.out,OP_NOP,,,,
@@ -1188,22 +1188,22 @@ my $query = Query4->new(table => $tWindow, name => "qWindow",
 		For the filtering by symbol and price, a sample output is:
 		</para>
 
-<!-- t/xQuery.t, Query4 -->
+<!-- t/xQuery.t, Query4, intermingled -->
 <exdump>
 > tWindow,OP_INSERT,1,AAA,10,10
 > tWindow,OP_INSERT,3,AAA,20,20
 > tWindow,OP_INSERT,4,BBB,20,20
 > qWindow,OP_INSERT
-> tWindow,OP_INSERT,5,AAA,30,30
-> qWindow,OP_INSERT,5,AAA,0,0
-> qWindow,OP_INSERT,0,,20,0
 qWindow.out,OP_INSERT,1,AAA,10,10
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_INSERT,4,BBB,20,20
 qWindow.out,OP_NOP,,,,
+> tWindow,OP_INSERT,5,AAA,30,30
+> qWindow,OP_INSERT,5,AAA,0,0
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_INSERT,5,AAA,30,30
 qWindow.out,OP_NOP,,,,
+> qWindow,OP_INSERT,0,,20,0
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_INSERT,4,BBB,20,20
 qWindow.out,OP_NOP,,,,
@@ -1383,16 +1383,16 @@ Code:
 > tWindow,OP_INSERT,3,AAA,20,20
 > tWindow,OP_INSERT,4,BBB,20,20
 > qWindow,OP_INSERT
-> tWindow,OP_INSERT,5,AAA,30,30
-> qWindow,OP_INSERT,5,AAA,0,0
-> qWindow,OP_INSERT,0,,20,0
 qWindow.out,OP_INSERT,1,AAA,10,10
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_INSERT,4,BBB,20,20
 qWindow.out,OP_NOP,,,,
+> tWindow,OP_INSERT,5,AAA,30,30
+> qWindow,OP_INSERT,5,AAA,0,0
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_INSERT,5,AAA,30,30
 qWindow.out,OP_NOP,,,,
+> qWindow,OP_INSERT,0,,20,0
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_INSERT,4,BBB,20,20
 qWindow.out,OP_NOP,,,,
@@ -1528,9 +1528,6 @@ sub genComparison # ($self, $query)
 > tWindow,OP_INSERT,3,AAA,20,20
 > tWindow,OP_INSERT,4,BBB,20,20
 > qWindow,OP_INSERT
-> tWindow,OP_INSERT,5,AAA,30,30
-> qWindow,OP_INSERT,5,AAA,0,0
-> qWindow,OP_INSERT,0,,20,0
 Compiled comparator:
 
 			sub # ($query, $data)
@@ -1542,6 +1539,8 @@ qWindow.out,OP_INSERT,1,AAA,10,10
 qWindow.out,OP_INSERT,3,AAA,20,20
 qWindow.out,OP_INSERT,4,BBB,20,20
 qWindow.out,OP_NOP,,,,
+> tWindow,OP_INSERT,5,AAA,30,30
+> qWindow,OP_INSERT,5,AAA,0,0
 Compiled comparator:
 
 			sub # ($query, $data)
@@ -1555,6 +1554,7 @@ Compiled comparator:
 			}
 qWindow.out,OP_INSERT,5,AAA,30,30
 qWindow.out,OP_NOP,,,,
+> qWindow,OP_INSERT,0,,20,0
 Compiled comparator:
 
 			sub # ($query, $data)
@@ -1796,11 +1796,11 @@ Triceps::X::DumbClient::run(\%dispatch);
 > tWindow,OP_INSERT,1,AAA,10,10
 > tWindow,OP_INSERT,3,AAA,20,20
 > qWindow,OP_INSERT
-> tWindow,OP_INSERT,5,AAA,30,30
-> qWindow,OP_INSERT
 qWindow.out OP_INSERT symbol="AAA" price="10" lot_size="10" 
 qWindow.out OP_INSERT symbol="AAA" price="20" lot_size="20" 
 qWindow.out OP_NOP 
+> tWindow,OP_INSERT,5,AAA,30,30
+> qWindow,OP_INSERT
 qWindow.out OP_INSERT symbol="AAA" price="20" lot_size="20" 
 qWindow.out OP_INSERT symbol="AAA" price="30" lot_size="30" 
 qWindow.out OP_NOP 
@@ -2015,6 +2015,139 @@ sub makeTranslation # (optName => optValue, ...)
 		refers to <pre>$result_rt</pre>, which gets picked up from the parent scope
 		and hardcoded in the closure.
 		</para>
+
+		<para>
+		The computation of the <pre>$result_rt</pre> is wrapped in the
+		enhanced error reporting, more on that below in
+		<xref linkend="sc_template_wrapfess" xrefstyle="select: label quotedtitle pageabbrev"/>&xrsp;.
+		</para>
+
 	</sect1>
 
+	<sect1 id="sc_template_wrapfess">
+		<title>Error reporting in the templates</title>
+
+		<indexterm>
+			<primary>wrapfess</primary>
+		</indexterm>
+		<indexterm>
+			<primary>template</primary>
+			<secondary>error reporting</secondary>
+		</indexterm>
+		<indexterm>
+			<primary>error handling</primary>
+			<secondary>in templates</secondary>
+		</indexterm>
+
+		<para>
+		When writing the Triceps templates, it's always good to make them
+		report any usage errors in the terms of the template (though the extra
+		detail doesn't hurt either). That is, if a template builds a
+		construction out of the lower-level primitives, and one of these
+		primitives fails, the good approach is to not just pass through the
+		error from the primitive but wrap it into a high-level explanation.
+		</para>
+
+		<para>
+		When the errors are reported like the exceptions, which means 
+		in Perl by <pre>die()</pre> or <pre>confess()</pre>, this is not that easy to do well. The basic
+		handling is easy, there is just no need to do anything to let the
+		exception propagate up, but adding the extra information becomes
+		difficult. First, you've got to explicitly check for these errors by
+		catching them with <pre>eval()</pre>, and only then can you add the extra
+		information and re-throw. And then there is this pesky problem of the
+		stack traces: if the re-throw uses <pre>confess()</pre>, it will likely add a
+		duplicate of at least a part of the stack trace that came with the
+		underlying error, and if it uses <pre>die()</pre>, the stack trace might be
+		incomplete since the native XS code in Triceps includes the stack trace only to
+		the nearest <pre>eval()</pre> to prevent the same problem when unrolling the
+		stacks mixed between Perl and Triceps scheduling.
+		</para>
+
+		<para>
+		Triceps provides a ready solution for this, the function <pre>Triceps::wrapfess()</pre>
+		that does everything right.  This solution is not even
+		limited to Triceps, it can be used with any kind of Perl programs. 
+		It has been used in the examples above, and looks as follows:
+		</para>
+
+<pre>
+my $result_rt = Triceps::wrapfess
+	"$myname: Invalid result row type specification:",
+	sub { Triceps::RowType->new(@rowdef); };
+</pre>
+
+		<para>
+		The function <pre>Triceps::wrapfess()</pre> is very much like the try/catch, only it has the
+		hardcoded catch logic that adds the extra error information and then
+		re-throws the exception.
+		</para>
+
+		<para>
+		Its first argument is the error message that describes the high-level
+		problem. This message will get prepended to the error report when the
+		error propagates up (and the original error message will get a bit of
+		extra indenting, to nest under that high-level explanation).
+		</para>
+
+		<para>
+		The second argument is the code that might throw an error, like the
+		try-block. The result from that block gets passed through as the result
+		of <pre>wrapfess()</pre>.
+		</para>
+
+		<para>
+		The full error message might look like this:
+		</para>
+
+<pre>
+Triceps::Fields::makeTranslation: Invalid result row type specification:
+  Triceps::RowType::new: incorrect specification:
+    duplicate field name 'f1' for fields 3 and 2
+    duplicate field name 'f2' for fields 4 and 1
+  Triceps::RowType::new: The specification was: {
+    f2 => int32[]
+    f1 => string
+    f1 => string
+    f2 => float64[]
+  } at blib/lib/Triceps/Fields.pm line 209.
+	Triceps::Fields::__ANON__ called at blib/lib/Triceps.pm line 192
+	Triceps::wrapfess('Triceps::Fields::makeTranslation: Invalid result row type spe...', 'CODE(0x1c531e0)') called at blib/lib/Triceps/Fields.pm line 209
+	Triceps::Fields::makeTranslation('rowTypes', 'ARRAY(0x1c533d8)', 'filterPairs', 'ARRAY(0x1c53468)') called at t/Fields.t line 186
+	eval {...} called at t/Fields.t line 185
+</pre>
+
+		<para>
+		It contains both the high-level and the detailed description of the
+		error, and the stack trace.
+		</para>
+
+		<para>
+		The stack trace doesn't get indented, no matter how many times the
+		message gets wrapped. <pre>Wrapfess()</pre> uses a slightly dirty trick for that:
+		it assumes that the error messages are indented by the spaces while the
+		stack trace from <pre>confess()</pre> is indented by a single tab character. So
+		the extra spaces of indenting are added only to the lines that don't
+		start with a tab.
+		</para>
+
+		<para>
+		Note also that even though <pre>wrapfess()</pre> uses <pre>eval()</pre>, there is no <pre>eval</pre>
+		above it in the stack trace. That's the other part of the magic: since
+		that <pre>eval</pre> is not meaningful, it gets cut from the stack trace, and
+		<pre>wrapfess()</pre> also uses it to find its own place in the stack trace, the
+		point from which a simple re-confession would dump the duplicate of the
+		stack. So it cuts the <pre>eval</pre> and everything under it in the original
+		stack trace, and then does its own confession, inserting the stack
+		trace again. This works very well for the traces thrown by the XS code,
+		which actually doesn't write anything below that <pre>eval</pre>; <pre>wrapfess()</pre> then
+		adds the missing part of the stack.
+		</para>
+
+		<para>
+		Wrapfess() can do a bit more, <pre>$message</pre> may be either a string or a code reference, or a reference
+		to a scalar variable containing either. The detauls of that are explained in
+		<xref linkend="sc_ref_toplevel" xrefstyle="select: label quotedtitle pageabbrev"/>&xrsp;.
+		</para>
+	</sect1>
 </chapter>

@@ -32,7 +32,10 @@ See the file COPYRIGHT for the copyright notice and license information
 
 		<itemizedlist>
 			<listitem>
-			Fixed the version information that was left incorrect, as 0.99.
+			Fixed the version information that was left incorrect (at 0.99).
+			</listitem>
+
+			<listitem>
 			Used a more generic pattern in tests for Perl error messages that have 
 			changed in the more recent versions of Perl (per CPAN report #99268).
 			</listitem>
@@ -40,6 +43,16 @@ See the file COPYRIGHT for the copyright notice and license information
 			<listitem>
 			Added the more convenient way to wrap the error reports in Perl,
 			<pre>Triceps::nestfess()</pre> and <pre>Triceps::wrapfess()</pre>.
+			</listitem>
+
+			<listitem>
+			Added functions for the nicer printing of auto-generated code,
+			<pre>Triceps::alignsrc()</pre> and <pre>Triceps::numalign()</pre>.
+			</listitem>
+
+			<listitem>
+			In the doc chapter on the templates, fixed the output of the examples:
+			properly interleaved the inputs and outputs.
 			</listitem>
 		</itemizedlist>
 	</sect1>
