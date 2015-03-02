@@ -17,7 +17,7 @@ package Triceps::X::ThreadedClient;
 
 sub CLONE_SKIP { 1; }
 
-our $VERSION = 'v2.0.0';
+our $VERSION = 'v2.0.1';
 
 use Carp;
 use IO::Socket;

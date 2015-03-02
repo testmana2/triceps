@@ -9,7 +9,7 @@ package Triceps::Braced;
 
 sub CLONE_SKIP { 1; }
 
-our $VERSION = 'v2.0.0';
+our $VERSION = 'v2.0.1';
 
 our @ISA = qw(Exporter);
 
