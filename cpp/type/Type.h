@@ -109,6 +109,19 @@ public:
 	// @return - the result string
 	string print(const string &indent = "", const string &subindent = "  ") const;
 
+	// Compare two values of this type. Returns -1 if the left value is less
+	// than the right one, 1 if greater, and 0 if equal. Returns -2 (CMP_NOT_SUPPORTED)
+	// if the comparison is not supported for this type.
+	//
+	// @param left - the left value to compare
+	// @param szleft - size in bytes of the left value; if the values of this type
+	//        are represented as fixed-length, the method may ignore this length
+	// @param right - the right value to compare
+	// @param szright - size in bytes of the right value; if the values of this type
+	//        are represented as fixed-length, the method may ignore this length
+	enum { CMP_NOT_SUPPORTED = -2 };
+	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const = 0;
+
 public:
 	// the global copies of the simple types that can be reused everywhere
 	static Autoref<const SimpleType> r_void;

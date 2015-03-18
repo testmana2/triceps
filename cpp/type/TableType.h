@@ -58,6 +58,7 @@ public:
 	virtual bool equals(const Type *t) const;
 	virtual bool match(const Type *t) const;
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
+	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
 
 	// The idea of the configuration methods is that they return back "this",
 	// making possible to chain them together with "->".

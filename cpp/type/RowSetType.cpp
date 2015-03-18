@@ -184,4 +184,9 @@ void RowSetType::printTo(string &res, const string &indent, const string &subind
 	res.append("}");
 }
 
+int RowSetType::cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const
+{
+	return CMP_NOT_SUPPORTED;
+}
+
 }; // TRICEPS_NS
