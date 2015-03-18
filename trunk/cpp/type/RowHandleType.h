@@ -36,6 +36,7 @@ public:
 	// from Type
 	virtual Erref getErrors() const;
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
+	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
 
 	// Factory for the new handles.
 	// @param r - the row to refer, the caller must have it already incref-ed.

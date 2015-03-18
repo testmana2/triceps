@@ -281,6 +281,11 @@ bool IndexType::match(const Type *t) const
 	return true;
 }
 
+int IndexType::cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const
+{
+	return CMP_NOT_SUPPORTED;
+}
+
 void IndexType::initializeNested()
 {
 	assert(isInitialized());

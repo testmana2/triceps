@@ -47,5 +47,10 @@ void RowHandleType::printTo(string &res, const string &indent, const string &sub
 	res.append("**rowHandle**");
 }
 
+int RowHandleType::cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const
+{
+	return CMP_NOT_SUPPORTED;
+}
+
 }; // TRICEPS_NS
 

@@ -139,6 +139,7 @@ public:
 	// and the names are not important.
 	virtual bool match(const Type *t) const;
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
+	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
 
 protected:
 	NameMap nameMap_; // mapping of names to indexes

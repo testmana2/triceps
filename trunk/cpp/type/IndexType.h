@@ -143,6 +143,7 @@ public:
 	virtual Erref getErrors() const; 
 	virtual bool equals(const Type *t) const;
 	virtual bool match(const Type *t) const;
+	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
 
 	// Convert the IndexId to string and back
 	// @param enval - enum value

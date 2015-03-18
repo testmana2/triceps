@@ -138,6 +138,11 @@ void RowType::printTo(string &res, const string &indent, const string &subindent
 	res.append("}");
 }
 
+int RowType::cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const
+{
+	return CMP_NOT_SUPPORTED;
+}
+
 Erref RowType::parse()
 {
 	Erref err;
