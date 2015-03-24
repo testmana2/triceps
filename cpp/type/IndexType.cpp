@@ -217,6 +217,11 @@ IndexType *IndexType::setAggregator(Onceref<AggregatorType> agg)
 	return this;
 }
 
+const NameSet *IndexType::getKeyExpr() const
+{
+	return getKey();
+}
+
 Erref IndexType::getErrors() const
 {
 	return errors_;
@@ -281,7 +286,7 @@ bool IndexType::match(const Type *t) const
 	return true;
 }
 
-int IndexType::cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const
+int IndexType::cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const
 {
 	return CMP_NOT_SUPPORTED;
 }
@@ -874,6 +879,7 @@ Valname indexids[] = {
 	{ IndexType::IT_HASHED, "IT_HASHED" },
 	{ IndexType::IT_FIFO, "IT_FIFO" },
 	{ IndexType::IT_SORTED, "IT_SORTED" },
+	{ IndexType::IT_ORDERED, "IT_ORDERED" },
 	{ IndexType::IT_LAST, "IT_LAST" },
 	{ -1, NULL }
 };

@@ -102,7 +102,7 @@ void TableType::printTo(string &res, const string &indent, const string &subinde
 	root_->printTo(res, indent, subindent);
 }
 
-int TableType::cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const
+int TableType::cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const
 {
 	return CMP_NOT_SUPPORTED;
 }

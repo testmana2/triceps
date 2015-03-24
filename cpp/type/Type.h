@@ -120,7 +120,7 @@ public:
 	// @param szright - size in bytes of the right value; if the values of this type
 	//        are represented as fixed-length, the method may ignore this length
 	enum { CMP_NOT_SUPPORTED = -2 };
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const = 0;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const = 0;
 
 public:
 	// the global copies of the simple types that can be reused everywhere
