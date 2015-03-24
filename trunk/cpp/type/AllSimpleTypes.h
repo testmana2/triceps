@@ -24,7 +24,7 @@ public:
 		SimpleType(TT_VOID, 0) // should Void even be a simple type?
 	{ }
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const;
 };
 
 class Uint8Type : public SimpleType
@@ -34,7 +34,7 @@ public:
 		SimpleType(TT_UINT8, 1)
 	{ }
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const;
 };
 
 class Int32Type : public SimpleType
@@ -44,7 +44,7 @@ public:
 		SimpleType(TT_INT32, sizeof(int32_t))
 	{ }
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const;
 };
 
 class Int64Type : public SimpleType
@@ -54,7 +54,7 @@ public:
 		SimpleType(TT_INT64, sizeof(int64_t))
 	{ }
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const;
 };
 
 class Float64Type : public SimpleType
@@ -64,7 +64,7 @@ public:
 		SimpleType(TT_FLOAT64, sizeof(double))
 	{ }
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const;
 };
 
 class StringType : public SimpleType
@@ -72,10 +72,10 @@ class StringType : public SimpleType
 public:
 	// string is not really a simple type, it's an array of uint8, with an extra \0 added
 	StringType() :
-		SimpleType(TT_STRING, 1)
+		SimpleType(TT_STRING, 0) // here 0 means that there aren't any arrays of strings
 	{ }
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const;
 };
 
 }; // TRICEPS_NS

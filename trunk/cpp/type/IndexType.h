@@ -131,6 +131,7 @@ public:
 		IT_HASHED, // HashedIndexType
 		IT_FIFO, // FifoIndexType
 		IT_SORTED, // SortedIndexType
+		IT_ORDERED, // OrderedIndexType
 		// add new types here
 		IT_LAST
 	};
@@ -143,7 +144,7 @@ public:
 	virtual Erref getErrors() const; 
 	virtual bool equals(const Type *t) const;
 	virtual bool match(const Type *t) const;
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const;
 
 	// Convert the IndexId to string and back
 	// @param enval - enum value
@@ -180,9 +181,21 @@ public:
 	}
 
 	// Get the list of field names that this index uses as keys.
+	//
 	// May be NULL if the index has no keys at all or if the key is
 	// calculated as some expression on the fields.
 	virtual const NameSet *getKey() const = 0;
+
+	// Get the list of expressions that this index uses as keys in the
+	// format that was used to set the key. The expressions may be the
+	// simple field names or the field names with whatever extra
+	// decorators supported by the particular index type.
+	//
+	// The default implementation returns getKey().
+	//
+	// May be NULL if the index has no keys at all or if the key is
+	// calculated as some expression on the fields.
+	virtual const NameSet *getKeyExpr() const;
 
 	// Define an aggregator on this index. Each aggregator instance
 	// will work on the instance of this index.

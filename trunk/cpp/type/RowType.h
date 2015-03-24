@@ -89,7 +89,7 @@ public:
 	virtual bool equals(const Type *t) const;
 	virtual bool match(const Type *t) const;
 	virtual void printTo(string &res, const string &indent = "", const string &subindent = "  ") const;
-	virtual int cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const;
+	virtual int cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const;
 
 	// just make the guts visible read-only to anyone
 	const vector<Field> &fields() const

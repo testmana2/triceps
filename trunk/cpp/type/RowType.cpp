@@ -138,7 +138,7 @@ void RowType::printTo(string &res, const string &indent, const string &subindent
 	res.append("}");
 }
 
-int RowType::cmpValue(const void *left, size_t szleft, const void *right, size_t szright) const
+int RowType::cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const
 {
 	return CMP_NOT_SUPPORTED;
 }

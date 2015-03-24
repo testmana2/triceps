@@ -32,7 +32,15 @@ See the file COPYRIGHT for the copyright notice and license information
 
 		<itemizedlist>
 			<listitem>
-			Methods for comparison of simple values in the &Cpp; API.
+			Added the methods for comparison of simple values in the &Cpp; API.
+			</listitem>
+
+			<listitem>
+			Added the OrderedIndexType in the &Cpp; API.
+			</listitem>
+
+			<listitem>
+			Added the method <pre>IndexType::getKeyExpr()</pre> in the &Cpp; API.
 			</listitem>
 
 		</itemizedlist>
