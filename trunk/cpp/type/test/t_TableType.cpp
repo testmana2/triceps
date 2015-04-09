@@ -132,9 +132,16 @@ UTESTCASE hashedIndex(Utest *utest)
 	UT_IS(tt->getFirstLeaf(), prim);
 
 	Autoref<NameSet> expectKey = (new NameSet())->add("a")->add("e");
-	const NameSet *key = prim->getKey();
-	UT_ASSERT(key != NULL);
-	UT_ASSERT(key->equals(expectKey));
+	{
+		const NameSet *key = prim->getKey();
+		UT_ASSERT(key != NULL);
+		UT_ASSERT(key->equals(expectKey));
+	}
+	{
+		const NameSet *key = prim->getKeyExpr();
+		UT_ASSERT(key != NULL);
+		UT_ASSERT(key->equals(expectKey));
+	}
 
 	UT_IS(tt->findSubIndexById(IndexType::IT_LAST), NULL);
 	UT_IS(tt->findSubIndex("nosuch"), NULL);
@@ -501,8 +508,14 @@ UTESTCASE fifoIndex(Utest *utest)
 	UT_ASSERT(prim != NULL);
 	UT_IS(tt->findSubIndexById(IndexType::IT_FIFO), prim);
 
-	const NameSet *key = prim->getKey();
-	UT_ASSERT(key == NULL);
+	{
+		const NameSet *key = prim->getKey();
+		UT_ASSERT(key == NULL);
+	}
+	{
+		const NameSet *key = prim->getKeyExpr();
+		UT_ASSERT(key == NULL);
+	}
 }
 
 UTESTCASE fifoIndexLimit(Utest *utest)
@@ -1084,8 +1097,8 @@ UTESTCASE aggregator(Utest *utest)
 		->addSubIndex("primary", (new HashedIndexType(
 			(new NameSet())->add("a")->add("e")))
 			->setAggregator(agt1)
-			->addSubIndex("level2", new HashedIndexType(
-				(new NameSet())->add("a")->add("e"))
+			->addSubIndex("level2", new OrderedIndexType(
+				(new NameSet())->add("a")->add("!e"))
 			)
 		)
 		;
@@ -1147,7 +1160,7 @@ UTESTCASE aggregator(Utest *utest)
 		"  }\n"
 		") {\n"
 		"  index HashedIndex(a, e, ) {\n"
-		"    index HashedIndex(a, e, ) level2,\n"
+		"    index OrderedIndex(a, !e, ) level2,\n"
 		"  } {\n"
 		"    aggregator (\n"
 		"      row {\n"
@@ -1167,7 +1180,7 @@ UTESTCASE aggregator(Utest *utest)
 		printf("---\n");
 		fflush(stdout);
 	}
-	UT_IS(tt->print(NOINDENT), "table ( row { uint8[10] a, int32[] b, int64 c, float64 d, string e, } ) { index HashedIndex(a, e, ) { index HashedIndex(a, e, ) level2, } { aggregator ( row { uint8[10] a, int32[] b, int64 c, float64 d, string e, } ) onPrimary } primary, }");
+	UT_IS(tt->print(NOINDENT), "table ( row { uint8[10] a, int32[] b, int64 c, float64 d, string e, } ) { index HashedIndex(a, e, ) { index OrderedIndex(a, !e, ) level2, } { aggregator ( row { uint8[10] a, int32[] b, int64 c, float64 d, string e, } ) onPrimary } primary, }");
 
 }
 
@@ -1192,6 +1205,7 @@ UTESTCASE copy(Utest *utest)
 	Autoref<AggregatorType> agt1 = new BasicAggregatorType("onPrimary", rt1, dummyAggregator);
 	Autoref<AggregatorType> agt2 = new BasicAggregatorType("onSecondary", rt1, dummyAggregator);
 	Autoref<AggregatorType> agt3 = new BasicAggregatorType("onTertiary", rt1, dummyAggregator);
+	Autoref<AggregatorType> agt4 = new BasicAggregatorType("onFourth", rt1, dummyAggregator); 
 	
 	// now build the table type
 	Autoref<TableType> tt = (new TableType(rt1))
@@ -1205,6 +1219,11 @@ UTESTCASE copy(Utest *utest)
 			->setAggregator(agt3)
 			->addSubIndex("level2", new FifoIndexType)
 		)
+		->addSubIndex("fourth", (new HashedIndexType(
+			(new NameSet())->add("a")->add("!e")))
+			->setAggregator(agt4)
+			->addSubIndex("level2", new FifoIndexType)
+			)
 		;
 
 	// Check that it matches before the deep-copying.
@@ -1226,6 +1245,12 @@ UTESTCASE copy(Utest *utest)
 		const AggregatorType *cpagt3 = tert->getAggregator();
 		UT_ASSERT(cpagt3 != NULL);
 		UT_IS(tt->rowType(), cpagt3->getRowType());
+
+		IndexType *four = tt->findSubIndex("fourth");
+		UT_ASSERT(four != NULL);
+		const AggregatorType *cpagt4 = four->getAggregator();
+		UT_ASSERT(cpagt4 != NULL);
+		UT_IS(tt->rowType(), cpagt4->getRowType());
 	}
 
 	// check the shallow copy
@@ -1250,6 +1275,12 @@ UTESTCASE copy(Utest *utest)
 		const AggregatorType *cpagt3 = tert->getAggregator();
 		UT_ASSERT(cpagt3 != NULL);
 		UT_IS(cptt->rowType(), cpagt3->getRowType());
+
+		IndexType *four = cptt->findSubIndex("fourth");
+		UT_ASSERT(four != NULL);
+		const AggregatorType *cpagt4 = four->getAggregator();
+		UT_ASSERT(cpagt4 != NULL);
+		UT_IS(cptt->rowType(), cpagt4->getRowType());
 	}
 
 	// check the flat copy
@@ -1275,6 +1306,14 @@ UTESTCASE copy(Utest *utest)
 		UT_ASSERT(!tert1.isNull());
 		UT_ASSERT(tert1->getAggregator() == NULL);
 		UT_ASSERT(tert1->isLeaf()); // all the sun-indexes are gone
+
+		Autoref<IndexType> four0 = tt->findSubIndex("fourth");
+		UT_ASSERT(!four0.isNull());
+
+		Autoref<IndexType> four1 = four0->copy(true);
+		UT_ASSERT(!four1.isNull());
+		UT_ASSERT(four1->getAggregator() == NULL);
+		UT_ASSERT(four1->isLeaf()); // all the sun-indexes are gone
 	}
 
 	// deep copy with a holder
@@ -1299,6 +1338,12 @@ UTESTCASE copy(Utest *utest)
 		const AggregatorType *cpagt3 = tert->getAggregator();
 		UT_ASSERT(cpagt3 != NULL);
 		UT_IS(cptt->rowType(), cpagt3->getRowType());
+
+		IndexType *four = cptt->findSubIndex("fourth");
+		UT_ASSERT(four != NULL);
+		const AggregatorType *cpagt4 = four->getAggregator();
+		UT_ASSERT(cpagt4 != NULL);
+		UT_IS(cptt->rowType(), cpagt4->getRowType());
 	}
 
 	// deep copy without a holder
@@ -1321,6 +1366,12 @@ UTESTCASE copy(Utest *utest)
 		const AggregatorType *cpagt3 = tert->getAggregator();
 		UT_ASSERT(cpagt3 != NULL);
 		UT_ASSERT(cptt->rowType() != cpagt3->getRowType());
+
+		IndexType *four = cptt->findSubIndex("fourth");
+		UT_ASSERT(four != NULL);
+		const AggregatorType *cpagt4 = four->getAggregator();
+		UT_ASSERT(cpagt4 != NULL);
+		UT_ASSERT(cptt->rowType() != cpagt4->getRowType());
 	}
 }
 

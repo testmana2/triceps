@@ -23,6 +23,7 @@ OrderedIndexType::Less::Less(const RowType *rt, intptr_t rhOffset, const vector<
 	asc_(asc),
 	rhOffset_(rhOffset)
 {
+	fprintf(stderr, "SBXXX key size %d asc size %d\n", (int)keyFld_.size(), (int)asc_.size());
 	assert(keyFld_.size() == asc_.size());
 }
 
@@ -105,7 +106,8 @@ OrderedIndexType::OrderedIndexType(NameSet *key) :
 }
 
 OrderedIndexType::OrderedIndexType(const OrderedIndexType &orig, bool flat) :
-	TreeIndexType(orig, flat)
+	TreeIndexType(orig, flat),
+	asc_(orig.asc_)
 {
 	if (!orig.key_.isNull()) {
 		key_ = new NameSet(*orig.key_);
@@ -116,7 +118,8 @@ OrderedIndexType::OrderedIndexType(const OrderedIndexType &orig, bool flat) :
 }
 
 OrderedIndexType::OrderedIndexType(const OrderedIndexType &orig, HoldRowTypes *holder) :
-	TreeIndexType(orig, holder)
+	TreeIndexType(orig, holder),
+	asc_(orig.asc_)
 {
 	if (!orig.key_.isNull()) {
 		key_ = new NameSet(*orig.key_);
@@ -146,6 +149,7 @@ OrderedIndexType *OrderedIndexType::setKey(NameSet *key)
 			asc_.push_back(false);
 		}
 	}
+	fprintf(stderr, "SBXXX setKey key size %d asc size %d\n", (int)key_->size(), (int)asc_.size());
 	return this;
 }
 

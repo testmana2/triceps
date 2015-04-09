@@ -14,6 +14,7 @@
 #include <type/RowSetType.h>
 #include <type/HashedIndexType.h>
 #include <type/SortedIndexType.h>
+#include <type/OrderedIndexType.h>
 #include <type/FifoIndexType.h>
 #include <type/RootIndexType.h>
 #include <type/TableType.h>
