@@ -27,21 +27,62 @@ void mkfields(RowType::FieldVec &fields)
 	fields.push_back(RowType::Field("e", Type::r_string));
 }
 
+// All fields are scalars
+void mkfieldsScalar(RowType::FieldVec &fields)
+{
+	fields.clear();
+	fields.push_back(RowType::Field("a", Type::r_uint8));
+	fields.push_back(RowType::Field("b", Type::r_int32));
+	fields.push_back(RowType::Field("c", Type::r_int64));
+	fields.push_back(RowType::Field("d", Type::r_float64));
+	fields.push_back(RowType::Field("e", Type::r_string));
+}
+
+// All fields are arrays
+void mkfieldsArray(RowType::FieldVec &fields)
+{
+	fields.clear();
+	fields.push_back(RowType::Field("a", Type::r_uint8, 0));
+	fields.push_back(RowType::Field("b", Type::r_int32, 0));
+	fields.push_back(RowType::Field("c", Type::r_int64, 0));
+	fields.push_back(RowType::Field("d", Type::r_float64, 0));
+}
+
 uint8_t v_uint8[10] = "123456789";
-int32_t v_int32 = 1234;
-int64_t v_int64 = 0xdeadbeefc00c;
-double v_float64 = 9.99e99;
+int32_t v_int32[2] = { 1234, 2345 };
+int64_t v_int64[2] = { 0xdeadbeefc00c, 0xf00f };
+double v_float64[2] = { 9.99e99, 1.11e11 };
 char v_string[] = "hello world";
 
 void mkfdata(FdataVec &fd)
 {
 	fd.resize(4);
 	fd[0].setPtr(true, &v_uint8, sizeof(v_uint8));
+	fd[1].setPtr(true, &v_int32, sizeof(v_int32[0]));
+	fd[2].setPtr(true, &v_int64, sizeof(v_int64[0]));
+	fd[3].setPtr(true, &v_float64, sizeof(v_float64[0]));
+	// test the constructor
+	fd.push_back(Fdata(true, &v_string, sizeof(v_string)));
+}
+
+void mkfdataScalar(FdataVec &fd)
+{
+	fd.resize(4);
+	fd[0].setPtr(true, &v_uint8, sizeof(v_uint8[0]));
+	fd[1].setPtr(true, &v_int32, sizeof(v_int32[0]));
+	fd[2].setPtr(true, &v_int64, sizeof(v_int64[0]));
+	fd[3].setPtr(true, &v_float64, sizeof(v_float64[0]));
+	// test the constructor
+	fd.push_back(Fdata(true, &v_string, sizeof(v_string)));
+}
+
+void mkfdataArray(FdataVec &fd)
+{
+	fd.resize(4);
+	fd[0].setPtr(true, &v_uint8, sizeof(v_uint8));
 	fd[1].setPtr(true, &v_int32, sizeof(v_int32));
 	fd[2].setPtr(true, &v_int64, sizeof(v_int64));
 	fd[3].setPtr(true, &v_float64, sizeof(v_float64));
-	// test the constructor
-	fd.push_back(Fdata(true, &v_string, sizeof(v_string)));
 }
 
 // The basic tests are similar to those in t_TableType for the other index types.
@@ -201,4 +242,294 @@ UTESTCASE orderedBadField(Utest *utest)
 	UT_IS(tt->getErrors()->print(), "index error:\n  nested index 1 'primary':\n    can not find the key field 'x'\n");
 }
 
-// The tests similar to t_xSortedIndexType
+// The tests similar to t_xSortedIndex
+
+// indexing by all kinds of scalar values
+UTESTCASE orderedIndexScalar(Utest *utest)
+{
+	RowType::FieldVec fld;
+	mkfieldsScalar(fld);
+
+	Autoref<RowType> rt1 = new CompactRowType(fld);
+	UT_ASSERT(rt1->getErrors().isNull());
+
+	Autoref<IndexType> it = new OrderedIndexType(
+		(new NameSet())->add("!a")->add("b")->add("!c")->add("d")->add("e")
+		);
+	UT_ASSERT(it);
+	Autoref<IndexType> itcopy = it->copy();
+	UT_ASSERT(itcopy);
+	UT_ASSERT(it != itcopy);
+	UT_ASSERT(it->equals(itcopy));
+	UT_ASSERT(it->match(itcopy));
+
+	// to make sure that the copy works just as well, use both at once
+	Autoref<TableType> tt = (new TableType(rt1))
+		->addSubIndex("primary", it
+		)->addSubIndex("secondary", itcopy
+		);
+
+	UT_ASSERT(tt);
+	tt->initialize();
+	if (UT_ASSERT(tt->getErrors().isNull())) {
+		printf("errors: %s\n", tt->getErrors()->print().c_str());
+		fflush(stdout);
+	}
+
+	const char *expect =
+		"table (\n"
+		"  row {\n"
+		"    uint8 a,\n"
+		"    int32 b,\n"
+		"    int64 c,\n"
+		"    float64 d,\n"
+		"    string e,\n"
+		"  }\n"
+		") {\n"
+		"  index OrderedIndex(!a, b, !c, d, e, ) primary,\n"
+		"  index OrderedIndex(!a, b, !c, d, e, ) secondary,\n"
+		"}"
+	;
+	if (UT_ASSERT(tt->print() == expect)) {
+		printf("---Expected:---\n%s\n", expect);
+		printf("---Received:---\n%s\n", tt->print().c_str());
+		printf("---\n");
+		fflush(stdout);
+	}
+
+	// make a table, some rows, and check the order
+	Autoref<Unit> unit = new Unit("u");
+	Autoref<Table> t = tt->makeTable(unit, "t");
+
+	FdataVec dv;
+
+	uint8_t myv_uint8;
+	int32_t myv_int32;
+	int64_t myv_int64;
+	double myv_float64;
+	string myv_string;
+
+	// each type gets exercised with 2 values and a NULL
+	{
+		mkfdataScalar(dv);
+		myv_uint8 = 11;
+		dv[0].data_ = (char *)&myv_uint8;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		myv_uint8 = 250;
+		dv[0].data_ = (char *)&myv_uint8;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		dv[0].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	{
+		mkfdataScalar(dv);
+		myv_int32 = 10;
+		dv[1].data_ = (char *)&myv_int32;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		myv_int32 = -10;
+		dv[1].data_ = (char *)&myv_int32;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		dv[1].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	{
+		mkfdataScalar(dv);
+		myv_int64 = 10;
+		dv[2].data_ = (char *)&myv_int64;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		myv_int64 = -10;
+		dv[2].data_ = (char *)&myv_int64;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		dv[2].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	{
+		mkfdataScalar(dv);
+		myv_float64 = 10.;
+		dv[3].data_ = (char *)&myv_float64;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		myv_float64 = -10.;
+		dv[3].data_ = (char *)&myv_float64;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		dv[3].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	// string gets one more value, an empty string
+	{
+		mkfdataScalar(dv);
+		myv_string = "a";
+		dv[4].setPtr(true, myv_string.c_str(), myv_string.size()+1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		myv_string = "aa";
+		dv[4].setPtr(true, myv_string.c_str(), myv_string.size()+1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		myv_string = "";
+		dv[4].setPtr(true, myv_string.c_str(), myv_string.size()+1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataScalar(dv);
+		dv[4].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	// re-insert one value, to make sure that the row gets replaced in the table
+	// (i.e. the equality comparison works)
+	{
+		mkfdataScalar(dv);
+		myv_uint8 = 250;
+		dv[0].data_ = (char *)&myv_uint8;
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	UT_IS(t->size(), 16);
+	RowHandle *iter = t->begin();
+
+	// field 0 "a" goes backwards
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 250); 
+
+	// stock field 0 {
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_ASSERT(rt1->isFieldNull(iter->getRow(), 1));
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), -10); 
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 10); 
+
+	// stock field 1 {
+	// stock field 2 {
+
+	// field 2 "c" goes backwards
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), 0xdeadbeefc00c);
+	UT_ASSERT(rt1->isFieldNull(iter->getRow(), 3));
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), 0xdeadbeefc00c);
+	UT_IS(rt1->getFloat64(iter->getRow(), 3), -10.);
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), 0xdeadbeefc00c);
+	UT_IS(rt1->getFloat64(iter->getRow(), 3), 10.);
+
+	// stock field 3 {
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), 0xdeadbeefc00c);
+	UT_IS(rt1->getFloat64(iter->getRow(), 3), 9.99e99);
+	UT_ASSERT(rt1->isFieldNull(iter->getRow(), 4));
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), 0xdeadbeefc00c);
+	UT_IS(rt1->getFloat64(iter->getRow(), 3), 9.99e99);
+	UT_IS(string(rt1->getString(iter->getRow(), 4)), "");
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), 0xdeadbeefc00c);
+	UT_IS(rt1->getFloat64(iter->getRow(), 3), 9.99e99);
+	UT_IS(string(rt1->getString(iter->getRow(), 4)), "a");
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), 0xdeadbeefc00c);
+	UT_IS(rt1->getFloat64(iter->getRow(), 3), 9.99e99);
+	UT_IS(string(rt1->getString(iter->getRow(), 4)), "aa");
+
+	// stock field 3 }
+	// stock field 2 }
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), 10);
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2), -10);
+
+	iter = t->next(iter);
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0), 49); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1), 1234); 
+	UT_ASSERT(rt1->isFieldNull(iter->getRow(), 2));
+
+	// stock field 1 }
+	// stock field 0 }
+
+	iter = t->next(iter);
+	UT_IS(rt1->getUint8(iter->getRow(), 0), 11); 
+
+	iter = t->next(iter);
+	UT_ASSERT(rt1->isFieldNull(iter->getRow(), 0));
+
+}
+
