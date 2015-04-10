@@ -13,7 +13,7 @@ namespace TRICEPS_NS {
 
 // Get a value of a simple type from a potentially unaligned pointer.
 // The size of the type is expected to be a power of 2.
-// This doesn't handly optimally the cases where the alignment
+// This doesn't handle optimally the cases where the alignment
 // required by the CPU is less than the "natural" alignment of the type.
 template <typename T>
 T getUnaligned(const T *ptr)
