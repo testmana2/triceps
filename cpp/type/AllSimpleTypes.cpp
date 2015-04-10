@@ -70,7 +70,7 @@ void StringType::printTo(string &res, const string &indent, const string &subind
 }
 int StringType::cmpValue(const void *left, intptr_t szleft, const void *right, intptr_t szright) const
 {
-	// size 0 should never happen but better be safe than sorry
+	// size 0 should never happen (it's a NULL value) but better be safe than sorry
 	if (szleft == 0) {
 		return (szright != 0);
 	}

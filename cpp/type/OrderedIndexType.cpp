@@ -23,7 +23,6 @@ OrderedIndexType::Less::Less(const RowType *rt, intptr_t rhOffset, const vector<
 	asc_(asc),
 	rhOffset_(rhOffset)
 {
-	fprintf(stderr, "SBXXX key size %d asc size %d\n", (int)keyFld_.size(), (int)asc_.size());
 	assert(keyFld_.size() == asc_.size());
 }
 
@@ -60,7 +59,7 @@ bool OrderedIndexType::Less::operator() (const RowHandle *r1, const RowHandle *r
 				return !asc_[i];
 		}
 
-		const RowType::Field *fld = &rt_->fields()[i];
+		const RowType::Field *fld = &rt_->fields()[idx];
 		const SimpleType *ft = static_cast<const SimpleType*>(fld->type_.get());
 
 		if (fld->arsz_ == RowType::Field::AR_SCALAR) {
@@ -143,13 +142,12 @@ OrderedIndexType *OrderedIndexType::setKey(NameSet *key)
 		const string &s = (*fullKey_)[i];
 		if (s[0] == '!') {
 			key_->push_back(s.substr(1));
-			asc_.push_back(true);
+			asc_.push_back(false);
 		} else {
 			key_->push_back(s);
-			asc_.push_back(false);
+			asc_.push_back(true);
 		}
 	}
-	fprintf(stderr, "SBXXX setKey key size %d asc size %d\n", (int)key_->size(), (int)asc_.size());
 	return this;
 }
 
