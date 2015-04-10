@@ -13,6 +13,7 @@
 #include <sched/AggregatorGadget.h>
 #include <common/StringUtil.h>
 #include <common/Exception.h>
+#include <common/Value.h>
 #include <table/Table.h>
 #include <mem/Rhref.h>
 
@@ -530,6 +531,340 @@ UTESTCASE orderedIndexScalar(Utest *utest)
 
 	iter = t->next(iter);
 	UT_ASSERT(rt1->isFieldNull(iter->getRow(), 0));
+}
+
+// indexing by all kinds of array values
+UTESTCASE orderedIndexArray(Utest *utest)
+{
+	RowType::FieldVec fld;
+	mkfieldsArray(fld);
+
+	Autoref<RowType> rt1 = new CompactRowType(fld);
+	UT_ASSERT(rt1->getErrors().isNull());
+
+	Autoref<IndexType> it = new OrderedIndexType(
+		(new NameSet())->add("!a")->add("b")->add("!c")->add("d")
+		);
+	UT_ASSERT(it);
+	Autoref<IndexType> itcopy = it->copy();
+	UT_ASSERT(itcopy);
+	UT_ASSERT(it != itcopy);
+	UT_ASSERT(it->equals(itcopy));
+	UT_ASSERT(it->match(itcopy));
+
+	// to make sure that the copy works just as well, use both at once
+	Autoref<TableType> tt = (new TableType(rt1))
+		->addSubIndex("primary", it
+		)->addSubIndex("secondary", itcopy
+		);
+
+	UT_ASSERT(tt);
+	tt->initialize();
+	if (UT_ASSERT(tt->getErrors().isNull())) {
+		printf("errors: %s\n", tt->getErrors()->print().c_str());
+		fflush(stdout);
+	}
+
+	const char *expect =
+		"table (\n"
+		"  row {\n"
+		"    uint8[] a,\n"
+		"    int32[] b,\n"
+		"    int64[] c,\n"
+		"    float64[] d,\n"
+		"  }\n"
+		") {\n"
+		"  index OrderedIndex(!a, b, !c, d, ) primary,\n"
+		"  index OrderedIndex(!a, b, !c, d, ) secondary,\n"
+		"}"
+	;
+	if (UT_ASSERT(tt->print() == expect)) {
+		printf("---Expected:---\n%s\n", expect);
+		printf("---Received:---\n%s\n", tt->print().c_str());
+		printf("---\n");
+		fflush(stdout);
+	}
+
+	// make a table, some rows, and check the order
+	Autoref<Unit> unit = new Unit("u");
+	Autoref<Table> t = tt->makeTable(unit, "t");
+
+	FdataVec dv;
+
+	uint8_t myv_uint8[2];
+	int32_t myv_int32[2];
+	int64_t myv_int64[2];
+	double myv_float64[2];
+
+	// each type gets exercised with 3 values and a NULL
+	{
+		mkfdataArray(dv);
+		myv_uint8[0] = 11;
+		myv_uint8[1] = 12;
+		dv[0].setPtr(true, myv_uint8, sizeof(uint8_t) * 2);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		myv_uint8[0] = 12;
+		dv[0].setPtr(true, myv_uint8, sizeof(uint8_t) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		myv_uint8[0] = 11;
+		dv[0].setPtr(true, myv_uint8, sizeof(uint8_t) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		dv[0].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	{
+		mkfdataArray(dv);
+		myv_int32[0] = 21;
+		myv_int32[1] = 22;
+		dv[1].setPtr(true, myv_int32, sizeof(int32_t) * 2);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		myv_int32[0] = 21;
+		dv[1].setPtr(true, myv_int32, sizeof(int32_t) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		myv_int32[0] = 22;
+		dv[1].setPtr(true, myv_int32, sizeof(int32_t) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		dv[1].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	{
+		mkfdataArray(dv);
+		myv_int64[0] = 31;
+		myv_int64[1] = 32;
+		dv[2].setPtr(true, myv_int64, sizeof(int64_t) * 2);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		myv_int64[0] = 31;
+		dv[2].setPtr(true, myv_int64, sizeof(int64_t) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		myv_int64[0] = 32;
+		dv[2].setPtr(true, myv_int64, sizeof(int64_t) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		dv[2].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	{
+		mkfdataArray(dv);
+		myv_float64[0] = 41.;
+		myv_float64[1] = 42.;
+		dv[3].setPtr(true, myv_float64, sizeof(double) * 2);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		myv_float64[0] = 41.;
+		dv[3].setPtr(true, myv_float64, sizeof(double) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		myv_float64[0] = 42.;
+		dv[3].setPtr(true, myv_float64, sizeof(double) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+	{
+		mkfdataArray(dv);
+		dv[3].setNull();
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	// re-insert one value, to make sure that the row gets replaced in the table
+	// (i.e. the equality comparison works)
+	{
+		mkfdataArray(dv);
+		myv_uint8[0] = 12;
+		dv[0].setPtr(true, myv_uint8, sizeof(uint8_t) * 1);
+		Rowref r1(rt1,  dv);
+		t->insertRow(r1);
+	}
+
+	UT_IS(t->size(), 16);
+	RowHandle *iter = t->begin();
+
+	// stock field 0 {
+	
+	// field 0 "a" goes backwards
+
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); // includes \0 at the end 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 0); 
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 1); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 21); 
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 21); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 1), 22); 
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 1); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 22); 
+
+	// stock field 1 {
+	// stock field 2 {
+
+	// field 2 "c" goes backwards
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 1234); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 1), 2345); 
+
+	UT_IS(rt1->getArraySize(iter->getRow(), 2), 2); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2, 0), 0xdeadbeefc00c);
+	UT_IS(rt1->getArraySize(iter->getRow(), 3), 0); 
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 1234); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 2), 2); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2, 0), 0xdeadbeefc00c);
+	UT_IS(rt1->getArraySize(iter->getRow(), 3), 1); 
+	UT_IS(rt1->getFloat64(iter->getRow(), 3, 0), 41.);
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 1234); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 2), 2); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2, 0), 0xdeadbeefc00c);
+	UT_IS(rt1->getArraySize(iter->getRow(), 3), 2); 
+	UT_IS(rt1->getFloat64(iter->getRow(), 3, 0), 41.);
+	UT_IS(rt1->getFloat64(iter->getRow(), 3, 1), 42.);
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 1234); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 2), 2); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2, 0), 0xdeadbeefc00c);
+	UT_IS(rt1->getArraySize(iter->getRow(), 3), 1); 
+	UT_IS(rt1->getFloat64(iter->getRow(), 3, 0), 42.);
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 1234); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 2), 1); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2, 0), 32);
+	UT_IS(rt1->getArraySize(iter->getRow(), 3), 2); 
+	UT_IS(rt1->getFloat64(iter->getRow(), 3, 0), 9.99e99);
+	UT_IS(rt1->getFloat64(iter->getRow(), 3, 1), 1.11e11);
+	// just for something completely different, also iterate
+	// the array differently
+	{
+		const double *v;
+		intptr_t sz;
+		bool notNull = rt1->getArrayField(iter->getRow(), 3, v, sz); 
+		UT_ASSERT(notNull);
+		UT_IS(sz, 2); 
+		UT_IS(getUnaligned(v + 0), 9.99e99); 
+		UT_IS(getUnaligned(v + 1), 1.11e11); 
+	}
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 1234); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 2), 2); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2, 0), 31);
+	UT_IS(rt1->getInt64(iter->getRow(), 2, 1), 32);
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 1234); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 2), 1); 
+	UT_IS(rt1->getInt64(iter->getRow(), 2, 0), 31);
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 10); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 49); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 1), 2); 
+	UT_IS(rt1->getInt32(iter->getRow(), 1, 0), 1234); 
+	UT_IS(rt1->getArraySize(iter->getRow(), 2), 0); 
+
+	// stock field 2 }
+	// stock field 1 }
+	// stock field 0 }
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 1); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 12); 
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 2); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 11); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 1), 12); 
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 1); 
+	UT_IS((int)rt1->getUint8(iter->getRow(), 0, 0), 11); 
+
+	iter = t->next(iter);
+	UT_IS(rt1->getArraySize(iter->getRow(), 0), 0); 
 
 }
 

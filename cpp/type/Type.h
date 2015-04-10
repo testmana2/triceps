@@ -44,9 +44,10 @@ public:
 
 	// @param simple - flag: this is a simple type (must be consistent with typeid)
 	// @param id - 
-	Type(bool simple, TypeId id) :
+	Type(bool simple, TypeId id, int size = 0) :
 		typeId_(id),
-		simple_(simple) 
+		simple_(simple),
+		size_(size)
 	{ }
 		
 	virtual ~Type()
@@ -64,6 +65,12 @@ public:
 		return typeId_;
 	}
 
+	// @return - the size of a basic element, or 0 if not applicable
+	int getSize() const
+	{
+		return size_;
+	}
+
 	// A convenience function to find a simple type by name (including void).
 	// @param name - name of the type
 	// @return - the type reference (one of r_*) or NULL if not found
@@ -73,7 +80,6 @@ public:
 	// The checkOrThrow() from common/Initialize.h can be used to throw on errors.
 	// @return - errors reference, may be NULL
 	virtual Erref getErrors() const = 0;
-
 
 	// The types can be equal in one of 3 ways, in order or decreasting exactness:
 	// 1. Exactly the same Type object.
@@ -134,6 +140,7 @@ public:
 protected:
 	enum TypeId typeId_; // allows to do switching and casting on it
 	bool simple_; // flag: this is a simple type
+	int size_; // size of the basic element of this type (0 if not a simple type)
 
 private:
 	Type();
