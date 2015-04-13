@@ -36,11 +36,29 @@ See the file COPYRIGHT for the copyright notice and license information
 			</listitem>
 
 			<listitem>
-			Added the OrderedIndexType in the &Cpp; API.
+			Added the methods for reading the unaligned values in the &Cpp; API.
 			</listitem>
 
 			<listitem>
-			Added the method <pre>IndexType::getKeyExpr()</pre> in the &Cpp; API.
+			Added the OrderedIndexType in the &Cpp; API and <pre>IndexType::newOrdered</pre> in Perl.
+			</listitem>
+
+			<listitem>
+			Added the method <pre>IndexType::getKeyExpr()</pre>.
+			</listitem>
+
+			<listitem>
+			<pre>StringType::getSize()</pre> now returns 0 instead of 1.
+			</listitem>
+
+			<listitem>
+			Moved the method <pre>getSize()</pre> from SimpleType to Type in the &Cpp; API.
+			</listitem>
+
+			<listitem>
+			Added the methods <pre>RowType::fieldTypeSize()</pre>,
+			<pre>RowType::getArrayField()</pre>,
+			<pre>RowType::getArraySize()</pre> in the &Cpp; API.
 			</listitem>
 
 		</itemizedlist>

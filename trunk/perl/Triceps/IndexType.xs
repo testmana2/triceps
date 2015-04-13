@@ -69,6 +69,42 @@ newHashed(char *CLASS, ...)
 	OUTPUT:
 		RETVAL
 
+#// create an OrderedIndex
+#// options go in pairs  name => value 
+WrapIndexType *
+newOrdered(char *CLASS, ...)
+	CODE:
+		static char funcName[] =  "Triceps::IndexType::newOrdered";
+		RETVAL = NULL; // shut up the warning
+		try { do {
+			clearErrMsg();
+			Autoref<NameSet> key;
+
+			if (items % 2 != 1) {
+				throw Exception::f("Usage: %s(CLASS, optionName, optionValue, ...), option names and values must go in pairs", funcName);
+			}
+			for (int i = 1; i < items; i += 2) {
+				const char *opt = (const char *)SvPV_nolen(ST(i));
+				SV *val = ST(i+1);
+				if (!strcmp(opt, "key")) {
+					if (!key.isNull()) {
+						throw Exception::f("%s: option 'key' can not be used twice", funcName);
+					}
+					key = parseNameSet(funcName, "key", val); // may throw
+				} else {
+					throw Exception::f("%s: unknown option '%s'", funcName, opt);
+				}
+			}
+
+			if (key.isNull()) {
+				throw Exception::f("%s: the required option 'key' is missing", funcName);
+			}
+
+			RETVAL = new WrapIndexType(new OrderedIndexType(key));
+		} while(0); } TRICEPS_CATCH_CROAK;
+	OUTPUT:
+		RETVAL
+
 #// create a FifoIndex
 #// options go in pairs  name => value 
 WrapIndexType *
@@ -459,6 +495,23 @@ getKey(WrapIndexType *self)
 		IndexType *ixt = self->get();
 
 		const NameSet *key = ixt->getKey();
+		if (key != NULL) {
+			for (NameSet::const_iterator it = key->begin(); it != key->end(); ++it) {
+				const string &s = *it;
+				XPUSHs(sv_2mortal(newSVpvn(s.c_str(), s.size())));
+			}
+		}
+
+#// returns the key expression of this index,
+#// in the native form of this index type
+#// (may be empty if the index is not keyed by fields)
+SV *
+getKeyExpr(WrapIndexType *self)
+	PPCODE:
+		clearErrMsg();
+		IndexType *ixt = self->get();
+
+		const NameSet *key = ixt->getKeyExpr();
 		if (key != NULL) {
 			for (NameSet::const_iterator it = key->begin(); it != key->end(); ++it) {
 				const string &s = *it;

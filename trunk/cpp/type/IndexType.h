@@ -189,7 +189,8 @@ public:
 	// Get the list of expressions that this index uses as keys in the
 	// format that was used to set the key. The expressions may be the
 	// simple field names or the field names with whatever extra
-	// decorators supported by the particular index type.
+	// decorators supported by the particular index type, or some
+	// sorting expression in whatever format.
 	//
 	// The default implementation returns getKey().
 	//
