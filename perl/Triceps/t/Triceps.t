@@ -15,7 +15,7 @@
 use ExtUtils::testlib;
 
 use Test;
-BEGIN { plan tests => 170 };
+BEGIN { plan tests => 171 };
 use Triceps;
 ok(1); # If we made it this far, we're ok.
 
@@ -49,7 +49,8 @@ ok(&Triceps::IT_ROOT, 0);
 ok(&Triceps::IT_HASHED, 1);
 ok(&Triceps::IT_FIFO, 2);
 ok(&Triceps::IT_SORTED, 3);
-ok(&Triceps::IT_LAST, 4);
+ok(&Triceps::IT_ORDERED, 4);
+ok(&Triceps::IT_LAST, 5);
 
 ok(&Triceps::AO_BEFORE_MOD, 0);
 ok(&Triceps::AO_AFTER_DELETE, 1);

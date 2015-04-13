@@ -15,7 +15,7 @@
 use ExtUtils::testlib;
 
 use Test;
-BEGIN { plan tests => 125 };
+BEGIN { plan tests => 146 };
 use Triceps;
 ok(1); # If we made it this far, we're ok.
 
@@ -36,6 +36,9 @@ $res = $it1->print();
 ok($res, "index HashedIndex(a, b, )");
 
 $key = join(",", $it1->getKey());
+ok($key, "a,b");
+
+$key = join(",", $it1->getKeyExpr());
 ok($key, "a,b");
 
 $res = eval { $it1->getTabtype(); };
@@ -69,6 +72,50 @@ $it1 = eval { Triceps::IndexType->newHashed(); };
 ok(!defined($it1));
 ok($@, qr/^Triceps::IndexType::newHashed: the required option 'key' is missing at/);
 
+###################### newOrdered ################################
+
+$it1 = Triceps::IndexType->newOrdered(key => [ "a", "!b" ]);
+ok(ref $it1, "Triceps::IndexType");
+$res = $it1->print();
+ok($res, "index OrderedIndex(a, !b, )");
+
+$key = join(",", $it1->getKey());
+ok($key, "a,b");
+
+$key = join(",", $it1->getKeyExpr());
+ok($key, "a,!b");
+
+$res = eval { $it1->getTabtype(); };
+ok(!defined $res);
+ok($@, qr/^Triceps::IndexType::getTabtype: this index type does not belong to an initialized table type at/);
+
+$res = $it1->getTabtypeSafe();
+ok(!defined $res);
+
+$it1 = eval { Triceps::IndexType->newOrdered("key"); };
+ok(!defined($it1));
+ok($@, qr/^Usage: Triceps::IndexType::newOrdered\(CLASS, optionName, optionValue, ...\), option names and values must go in pairs at/);
+
+$it1 = eval { Triceps::IndexType->newOrdered(zzz => [ "a", "b" ]); };
+ok(!defined($it1));
+ok($@, qr/^Triceps::IndexType::newOrdered: unknown option 'zzz' at/);
+
+$it1 = eval { Triceps::IndexType->newOrdered(key => [ "a", "!b" ], key => ["c"]); };
+ok(!defined($it1));
+ok($@, qr/^Triceps::IndexType::newOrdered: option 'key' can not be used twice at/);
+
+$it1 = eval { Triceps::IndexType->newOrdered(key => { "a", "!b" }); };
+ok(!defined($it1));
+ok($@, qr/^Triceps::IndexType::newOrdered: option 'key' value must be an array reference at/);
+
+$it1 = eval { Triceps::IndexType->newOrdered(key => undef); };
+ok(!defined($it1));
+ok($@, qr/^Triceps::IndexType::newOrdered: option 'key' value must be an array reference at/);
+
+$it1 = eval { Triceps::IndexType->newOrdered(); };
+ok(!defined($it1));
+ok($@, qr/^Triceps::IndexType::newOrdered: the required option 'key' is missing at/);
+
 ###################### newFifo #################################
 
 $it1 = Triceps::IndexType->newFifo();
@@ -87,6 +134,9 @@ $res = $it1->print();
 ok($res, "index FifoIndex( reverse)");
 
 @key = $it1->getKey();
+ok($#key, -1);
+
+@key = $it1->getKeyExpr();
 ok($#key, -1);
 
 $it1 = eval { Triceps::IndexType->newFifo("key"); };
