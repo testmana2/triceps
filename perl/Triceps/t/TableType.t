@@ -343,7 +343,7 @@ table \(
 		->addSubIndex("by_c",
 			Triceps::IndexType->newHashed(key => [ "c" ])
 			->addSubIndex("by_ab",
-				Triceps::IndexType->newHashed(key => [ "a", "b" ])
+				Triceps::IndexType->newOrdered(key => [ "a", "b" ])
 			)
 		)
 	;
@@ -443,7 +443,7 @@ ok($@, qr/^Triceps::TableType::addSubIndex: table is already initialized, can no
 			->addSubIndex(a => Triceps::IndexType->newFifo()
 				->setAggregator(Triceps::AggregatorType->new($rt1, "ag-two-a", undef, ' '))
 			)
-			->addSubIndex(b => Triceps::IndexType->newHashed(key => [ "d" ])
+			->addSubIndex(b => Triceps::IndexType->newOrdered(key => [ "d" ])
 				->setAggregator(Triceps::AggregatorType->new($rt1, "ag-two-b", undef, ' '))
 			)
 			->setAggregator(Triceps::AggregatorType->new($rt1, "ag-two", undef, ' '))
@@ -475,7 +475,7 @@ ok($@, qr/^Triceps::TableType::addSubIndex: table is already initialized, can no
 	{
 		# put the second index first, also "+" under a leaf index
 		my $ttcopy = $ttorig->copyFundamental([ "two", "b" ], [ "one", "a", "+" ], "NO_FIRST_LEAF", );
-		ok($ttcopy->print(undef), 'table ( row { uint8 a, int32 b, int64 c, float64 d, string e, } ) { index PerlSortedIndex(SimpleOrder b ASC, c ASC, ) { index HashedIndex(d, ) b, } two, index HashedIndex(b, c, ) { index FifoIndex() a, } one, }');
+		ok($ttcopy->print(undef), 'table ( row { uint8 a, int32 b, int64 c, float64 d, string e, } ) { index PerlSortedIndex(SimpleOrder b ASC, c ASC, ) { index OrderedIndex(d, ) b, } two, index HashedIndex(b, c, ) { index FifoIndex() a, } one, }');
 	}
 
 	# errors
