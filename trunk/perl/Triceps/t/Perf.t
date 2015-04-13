@@ -97,6 +97,26 @@ my $tDoubleHashed = $u1->makeTable($ttDoubleHashed, "tDoubleHashed");
 my $rhDoubleHashed = $tDoubleHashed->makeRowHandle($row1);
 my $ropDoubleHashed = $tDoubleHashed->getInputLabel()->makeRowop("OP_INSERT", $row1);
 
+my $ttSingleOrderedInt = Triceps::TableType->new($rt1)
+	->addSubIndex("primary",
+		Triceps::IndexType->newOrdered(key => ["b"])
+	);
+;
+$ttSingleOrderedInt->initialize();
+my $tSingleOrderedInt = $u1->makeTable($ttSingleOrderedInt, "tSingleOrderedInt");
+my $rhSingleOrderedInt = $tSingleOrderedInt->makeRowHandle($row1);
+my $ropSingleOrderedInt = $tSingleOrderedInt->getInputLabel()->makeRowop("OP_INSERT", $row1);
+
+my $ttSingleOrderedString = Triceps::TableType->new($rt1)
+	->addSubIndex("primary",
+		Triceps::IndexType->newOrdered(key => ["e"])
+	);
+;
+$ttSingleOrderedString->initialize();
+my $tSingleOrderedString = $u1->makeTable($ttSingleOrderedString, "tSingleOrderedString");
+my $rhSingleOrderedString = $tSingleOrderedString->makeRowHandle($row1);
+my $ropSingleOrderedString = $tSingleOrderedString->getInputLabel()->makeRowop("OP_INSERT", $row1);
+
 my $ttSingleSorted = Triceps::TableType->new($rt1)
 	->addSubIndex("primary",
 		Triceps::IndexType->newPerlSorted("basic", undef, sub {
@@ -279,6 +299,17 @@ printf("  RowHandle creation overhead in Perl %f s, %.02f per second.\n", $df, $
 
 $start = &Triceps::now();
 for ($i = 0; $i < $pcount; $i++) { 
+	$tSingleOrderedInt->insert($row1);
+}
+$end = &Triceps::now();
+$df = $end - $start;
+
+printf("Repeated table insert (single ordered int idx, direct) %f s, %.02f per second.\n", $df, $pcount/$df);
+
+#########################
+
+$start = &Triceps::now();
+for ($i = 0; $i < $pcount; $i++) { 
 	$tSingleSorted->insert($row1);
 }
 $end = &Triceps::now();
@@ -349,6 +380,50 @@ $df -= $insertsingledf;
 
 $start = &Triceps::now();
 for ($i = 0; $i < $pcount; $i++) { 
+	$tSingleOrderedInt->insert(
+		$rt1->makeRowArray(
+			"uint8",
+			$i,
+			3e15+0,
+			3.14,
+			"string",
+		)
+	);
+}
+$end = &Triceps::now();
+$df = $end - $start;
+
+printf("Table insert makeRowArray (single ordered int idx, direct) %f s, %.02f per second.\n", $df, $pcount/$df);
+
+$df -= $mkarraydf;
+	printf("  Excluding makeRowArray %f s, %.02f per second.\n", $df, $pcount/$df);
+
+#########################
+
+$start = &Triceps::now();
+for ($i = 0; $i < $pcount; $i++) { 
+	$tSingleOrderedString->insert(
+		$rt1->makeRowArray(
+			"uint8",
+			1,
+			3e15+0,
+			3.14,
+			"$i",
+		)
+	);
+}
+$end = &Triceps::now();
+$df = $end - $start;
+
+printf("Table insert makeRowArray (single ordered string idx, direct) %f s, %.02f per second.\n", $df, $pcount/$df);
+
+$df -= $mkarraydf;
+	printf("  Excluding makeRowArray %f s, %.02f per second.\n", $df, $pcount/$df);
+
+#########################
+
+$start = &Triceps::now();
+for ($i = 0; $i < $pcount; $i++) { 
 	$tSingleSorted->insert(
 		$rt1->makeRowArray(
 			"uint8",
@@ -388,6 +463,50 @@ $df -= $mkarraydf;
 $df = $end - $start;
 
 printf("Table lookup (single hashed idx) %f s, %.02f per second.\n", $df, $pcount/$df);
+
+#########################
+
+{
+	my $rh = $tSingleOrderedInt->makeRowHandle(
+			$rt1->makeRowArray(
+				"uint8",
+				$pcount/2,
+				3e15+0,
+				3.14,
+				"string",
+			)
+		);
+	$start = &Triceps::now();
+	for ($i = 0; $i < $pcount; $i++) { 
+		$tSingleOrderedInt->find($rh);
+	}
+	$end = &Triceps::now();
+}
+$df = $end - $start;
+
+printf("Table lookup (single ordered int idx) %f s, %.02f per second.\n", $df, $pcount/$df);
+
+#########################
+
+{
+	my $rh = $tSingleOrderedString->makeRowHandle(
+			$rt1->makeRowArray(
+				"uint8",
+				1,
+				3e15+0,
+				3.14,
+				($pcount/2) . '',
+			)
+		);
+	$start = &Triceps::now();
+	for ($i = 0; $i < $pcount; $i++) { 
+		$tSingleOrderedString->find($rh);
+	}
+	$end = &Triceps::now();
+}
+$df = $end - $start;
+
+printf("Table lookup (single ordered string idx) %f s, %.02f per second.\n", $df, $pcount/$df);
 
 #########################
 
