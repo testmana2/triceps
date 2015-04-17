@@ -155,8 +155,6 @@ ok(ref $fa1, "Triceps::Facet");
 my $nx1 = $fa1->nexus();
 ok(ref $nx1, "Triceps::Nexus");
 
-# XXX add AutoDrain
-
 my $collapse = Triceps::Collapse->new(
 	unit => $u1,
 	name => "collapse",
