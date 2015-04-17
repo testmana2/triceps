@@ -61,6 +61,10 @@ See the file COPYRIGHT for the copyright notice and license information
 			<pre>RowType::getArraySize()</pre> in the &Cpp; API.
 			</listitem>
 
+			<listitem>
+			The <pre>X::ThreadedClient</pre> now returns all the received 
+			data when the wait for the expected pattern times out.
+			</listitem>
 		</itemizedlist>
 	</sect1>
 
