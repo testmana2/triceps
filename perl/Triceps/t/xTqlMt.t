@@ -70,9 +70,7 @@ sub appCoreT # (@opts)
 
 	my $ttSymbol = Triceps::TableType->new($rtSymbol)
 		->addSubIndex("bySymbol", 
-			# SBXXX TODO newOrdered() breaks the logic here, why?
-			#Triceps::IndexType->newOrdered(key => ["symbol"])
-			Triceps::SimpleOrderedIndex->new(symbol => "ASC")
+			Triceps::IndexType->newOrdered(key => ["symbol"])
 		)
 	;
 	$ttSymbol->initialize();
