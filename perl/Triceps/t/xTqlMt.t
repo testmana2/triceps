@@ -363,7 +363,7 @@ c1|__EOF__
 
 			# a weird query that doesn't make a whole lot of sense
 			# but tests the join of the same table twice in the
-			# same query
+			# same query; and tests the dynamic creation of an index on eps by join
 			$client->send(c1 => "querysub,q2,query2,"
 				. '{read table window}'
 				. '{join table symbol byLeft {symbol} type left}'
