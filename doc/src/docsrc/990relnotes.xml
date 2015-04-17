@@ -65,6 +65,10 @@ See the file COPYRIGHT for the copyright notice and license information
 			The <pre>X::ThreadedClient</pre> now returns all the received 
 			data when the wait for the expected pattern times out.
 			</listitem>
+
+			<listitem>
+			Enabled the optimization for the build of the releases.
+			</listitem>
 		</itemizedlist>
 	</sect1>
 
