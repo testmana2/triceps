@@ -56,7 +56,7 @@ sub appCoreT # (@opts)
 
 	my $ttWindow = Triceps::TableType->new($rtTrade)
 		->addSubIndex("byId", 
-			Triceps::SimpleOrderedIndex->new(id => "ASC")
+			Triceps::IndexType->newOrdered(key => ["id"])
 		)
 	;
 	$ttWindow->initialize();
@@ -70,6 +70,8 @@ sub appCoreT # (@opts)
 
 	my $ttSymbol = Triceps::TableType->new($rtSymbol)
 		->addSubIndex("bySymbol", 
+			# SBXXX TODO newOrdered() breaks the logic here, why?
+			#Triceps::IndexType->newOrdered(key => ["symbol"])
 			Triceps::SimpleOrderedIndex->new(symbol => "ASC")
 		)
 	;

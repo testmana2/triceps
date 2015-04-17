@@ -337,7 +337,7 @@ my $ttWindow = Triceps::TableType->new($rtTrade)
 	->addSubIndex("bySymbol", 
 		Triceps::IndexType->newHashed(key => [ "symbol" ])
 		->addSubIndex("orderById",
-			Triceps::SimpleOrderedIndex->new(id => "ASC",)
+			Triceps::IndexType->newOrdered(key => [ "id" ])
 			->setAggregator(Triceps::AggregatorType->new(
 				$rtAvgPrice, "aggrAvgPrice", undef, \&computeAverage3)
 			)
@@ -1179,7 +1179,7 @@ my $ttWindow = Triceps::TableType->new($rtTrade)
 			)
 		)
 		->addSubIndex("byPrice",
-			Triceps::SimpleOrderedIndex->new(price => "ASC",)
+			Triceps::IndexType->newOrdered(key => [ "price" ])
 			->addSubIndex("multi", Triceps::IndexType->newFifo())
 		)
 	)
@@ -1326,7 +1326,7 @@ my $ttWindow = Triceps::TableType->new($rtTrade)
 			Triceps::IndexType->newFifo(limit => 4)
 		)
 		->addSubIndex("byPrice",
-			Triceps::SimpleOrderedIndex->new(price => "ASC",)
+			Triceps::IndexType->newOrdered(key => [ "price" ])
 			->addSubIndex("multi", Triceps::IndexType->newFifo())
 			->setAggregator(Triceps::AggregatorType->new(
 				$rtAvgPrice, "aggrAvgPrice", undef, \&computeAverage12)
