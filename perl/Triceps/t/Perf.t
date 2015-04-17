@@ -315,7 +315,7 @@ for ($i = 0; $i < $pcount; $i++) {
 $end = &Triceps::now();
 $df = $end - $start;
 
-printf("Repeated table insert (single sorted idx, direct) %f s, %.02f per second.\n", $df, $pcount/$df);
+printf("Repeated table insert (single perl sorted idx, direct) %f s, %.02f per second.\n", $df, $pcount/$df);
 
 #########################
 
@@ -437,7 +437,7 @@ for ($i = 0; $i < $pcount; $i++) {
 $end = &Triceps::now();
 $df = $end - $start;
 
-printf("Table insert makeRowArray (single sorted idx, direct) %f s, %.02f per second.\n", $df, $pcount/$df);
+printf("Table insert makeRowArray (single perl sorted idx, direct) %f s, %.02f per second.\n", $df, $pcount/$df);
 
 $df -= $mkarraydf;
 	printf("  Excluding makeRowArray %f s, %.02f per second.\n", $df, $pcount/$df);
@@ -528,7 +528,7 @@ printf("Table lookup (single ordered string idx) %f s, %.02f per second.\n", $df
 }
 $df = $end - $start;
 
-printf("Table lookup (single sorted idx) %f s, %.02f per second.\n", $df, $pcount/$df);
+printf("Table lookup (single perl sorted idx) %f s, %.02f per second.\n", $df, $pcount/$df);
 
 #########################
 
