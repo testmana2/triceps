@@ -53,6 +53,7 @@ OBJEXT := .o
 BINEXT := 
 BUILDDIR := build
 CPPFLAGS := -I.. $(TRICEPS_CONF)
+# for production build, add -O3 -fno-strict-aliasing
 CFLAGS := -g -fPIC -pthread -rdynamic $(CPPFLAGS) $(CFLAGS_WARNINGS) $(TRICEPS_CONF)
 CXXFLAGS := $(CFLAGS)
 LDFLAGS := -L../build -l$(LIBRARY) $(TRICEPS_XLIB)
