@@ -36,10 +36,10 @@ our $rtTrade = Triceps::RowType->new(
 
 our $ttWindow = Triceps::TableType->new($rtTrade)
 	->addSubIndex("bySymbol", 
-		Triceps::SimpleOrderedIndex->new(symbol => "ASC")
-			->addSubIndex("last2",
-				Triceps::IndexType->newFifo(limit => 2)
-			)
+		Triceps::IndexType->newOrdered(key => ["symbol"])
+		->addSubIndex("last2",
+			Triceps::IndexType->newFifo(limit => 2)
+		)
 	)
 ;
 $ttWindow->initialize();

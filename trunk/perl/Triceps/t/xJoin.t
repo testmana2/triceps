@@ -565,7 +565,7 @@ our $ttToUsd = Triceps::TableType->new($rtToUsd)
 		Triceps::IndexType->newHashed(key => [ "date", "currency" ])
 	)
 	->addSubIndex("byDate", # for cleaning by date
-		Triceps::SimpleOrderedIndex->new(date => "ASC")
+		Triceps::IndexType->newOrdered(key => [ "date" ])
 		->addSubIndex("grouping", Triceps::IndexType->newFifo())
 	)
 ;
@@ -581,7 +581,7 @@ our $ttPosition = Triceps::TableType->new($rtPosition)
 		->addSubIndex("grouping", Triceps::IndexType->newFifo())
 	)
 	->addSubIndex("byDate", # for cleaning by date
-		Triceps::SimpleOrderedIndex->new(date => "ASC")
+		Triceps::IndexType->newOrdered(key => [ "date" ])
 		->addSubIndex("grouping", Triceps::IndexType->newFifo())
 	)
 ;
