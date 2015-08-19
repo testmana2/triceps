@@ -103,7 +103,7 @@ UTESTCASE readUnalignedMemcpy(Utest *utest)
 	printf("        [%lld] %lld iterations, %f seconds, %f iter per second\n", (long long) x, (long long)n, (tend-tstart), (double)n / (tend-tstart));
 }
 
-UTESTCASE readAlignedMacro(Utest *utest)
+UTESTCASE readAlignedTemplate(Utest *utest)
 {
 	int64_t n = findRunCount();
 	int64_t x = 0;
@@ -116,7 +116,7 @@ UTESTCASE readAlignedMacro(Utest *utest)
 	printf("        [%lld] %lld iterations, %f seconds, %f iter per second\n", (long long) x, (long long)n, (tend-tstart), (double)n / (tend-tstart));
 }
 
-UTESTCASE readUnalignedMacro(Utest *utest)
+UTESTCASE readUnalignedTemplate(Utest *utest)
 {
 	int64_t n = findRunCount();
 	int64_t x = 0;
