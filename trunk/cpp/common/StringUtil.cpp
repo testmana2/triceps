@@ -13,7 +13,7 @@
 
 namespace TRICEPS_NS {
 
-const string &NOINDENT;
+const string &NOINDENT = NULL;
 
 const string &nextindent(const string &indent, const string &subindent, string &target)
 {
